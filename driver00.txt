@@ -1,1 +1,7 @@
-model 0.0 1.0 0.0 45 2.0 10.0 0.0 10.0 cube.obj
+eye 0 0 10
+look 0 0 0
+up 0 1 0
+d 5
+bounds -1 -1 1 1
+res 32 32
+model 0.0 0.0 1.0 0 1.0 0.0 0.0 0.0 simface.obj

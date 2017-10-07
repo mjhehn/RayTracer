@@ -88,6 +88,7 @@
         "hash_set": "cpp",
         "scoped_allocator": "cpp",
         "shared_mutex": "cpp",
-        "clocale": "cpp"
+        "clocale": "cpp",
+        "filesystem": "cpp"
     }
 }
