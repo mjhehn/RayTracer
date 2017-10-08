@@ -4,8 +4,8 @@ Scene3D::Scene3D(string imageFileName, string driverFileName)
 {
     imageName = imageFileName;
     ifstream fin;
-    tmin = 1;
-    tmax = -1;
+    tmin = 0;
+    tmax = 0;
     fin.open(driverFileName);
     
     dirName = driverFileName;		//get the directory name by chopping the file extension and directory off of the driver text file
@@ -71,59 +71,129 @@ void Scene3D::print()
     }
 }
 
+ //ray is pixelPoint-eye normalized
 void Scene3D::printImage()
 {
     std::ofstream fout;
     fout.open(imageName);
     fout<<"P3"<<"\n";
     fout<<camera.resX<<" "<<camera.resY<<" "<<255<<"\n";
-
-    getTVals();
-
-    int numCols = camera.pixelPoints.cols();
-
     double ratio = 0;
-    double r = 0;
-    double g = 0;
-    double b = 0;
-    for(int j = 0; j < numCols; j++)   //c++11 range based looping
+    int r = 0;
+    int g = 0;
+    int b = 0;
+
+    for(int i = camera.rayTVals.size()-1; i>=0; i--)
     {
-        ratio = 2*(tVals[j]-tmin)/(tmax-tmin);
-        r = std::max(0.0, 255*(1-ratio));
-        b = std::max(0.0, 255*(ratio-1));
-        g = 255-b-r;
-        fout<<r<<" "<<g<<" "<<b<<"\n";
+        if(camera.rayTVals[i] == 0)
+        {
+            r = g = b = 239;
+        }
+        else
+        {
+            ratio = 2*(camera.rayTVals[i]-tmin)/(tmax-tmin);
+            r = std::max(0.0, 255*(1-ratio));
+            b = std::max(0.0, 255*(ratio-1));
+            g = 255-b-r;
+        }
+        
+        fout<<r<<" "<<g<<" "<<b<<" ";
+        if((i+1)%camera.resX == 0)
+        {
+            fout<<"\n";
+        }
     }
+        
+    
     fout.close();
+}
+
+void Scene3D::castRays()
+{
+    bool tsNotSet = true;
+    bool intersected = false;
+    for(int j = 0; j < camera.resY; j++){
+        for(int i = 0; i < camera.resX; i++){
+            Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
+            double lowt = 0;
+            for(unsigned int k = 0; k<objects.size(); k++){
+                //check for intersection with sphere defined by the object.
+                for(auto l: objects[k].planes){
+                    intersected = objects[k].checkIntersection(l, ray);   
+                    if(intersected){
+                        if(lowt == 0){lowt = ray.t;}
+                        else{;}
+
+                        if(tsNotSet){
+                            tmin = tmax = ray.t;
+                            tsNotSet = false;
+                        }
+                        else{
+                            lowt = std::min(lowt, ray.t);
+                            tmin = std::min(tmin, ray.t);
+                            
+                        }
+                    }
+                    else{;}
+                }
+                
+            }
+
+            //checkspheres
+            for(unsigned int k = 0; k<spheres.size(); k++){
+                intersected = spheres[k].checkIntersection(ray);   
+                if(intersected){
+                    if(lowt == 0){lowt = ray.t;}
+                    else{;}
+
+                    if(tsNotSet){
+                        tmin = tmax = ray.t;
+                        tsNotSet = false;
+                    }
+                    else{
+                        lowt = std::min(lowt, ray.t);
+                        tmin = std::min(tmin, ray.t);
+                        
+                    }
+                }
+                else{;}
+            }
+            ray.t = lowt;
+            tmax = std::max(tmax, ray.t);
+            
+            camera.rayTVals.push_back(ray.t);
+        }
+    }
     cout<<tmin<<" "<<tmax<<endl;
 }
 
-void Scene3D::getTVals()
+bool Scene3D::checkIntersection(int i, Plane& plane, Ray& ray)
 {
-    int numCols = camera.pixelPoints.cols();
-    Vector3d lookVector = -(camera.eye-camera.look);
-    lookVector.normalize();
-    for(int j = 0; j < numCols; j++) 
+    Vector3d a = objects[i].objectMatrix.col(plane.point1-1).head<3>();
+    Vector3d b = objects[i].objectMatrix.col(plane.point2-1).head<3>();
+    Vector3d c = objects[i].objectMatrix.col(plane.point3-1).head<3>();
+    Vector3d d = ray.dirVector;
+    Vector3d l = ray.startPoint;
+    Matrix3d M;
+    M<<a[0]-b[0], a[0]-c[0], d[0],
+    a[1]-b[1], a[1]-c[1], d[1],
+    a[2]-b[2], a[2]-c[2], d[2];
+
+    Vector3d Y;
+    Y<<a[0]-l[0], a[1]-l[1], a[2]-l[2];
+    Vector3d X = M.householderQr().solve(Y);
+
+    
+
+    if(X[0] >= 0 && X[1] >= 0)
     {
-        //cout<<j<<endl;
-        Ray ray(camera.pixelPoints.col(j), 0, lookVector);
-        for(unsigned int i = 0; i < objects.size(); i++)
+        if((X[0]+X[1])<=1 && X[2] > 0)
         {
-            bool intersected = false;
-            intersected = objects[i].checkIntersection(ray);
-            if(intersected)
-            {
-                cout<<" yay ";
-            }
-            if(ray.t > tmax)
-            {
-                tmax = ray.t;
-            }
-            else if (ray.t<tmin)
-            {
-                tmin = ray.t;
-            }
-            tVals.push_back(ray.t);
+            ray.t = X[2];
+            tmin = std::min(tmin, ray.t);
+            tmax = std::max(tmax, ray.t);
+            return true;
         }
     }
+    return false;
 }

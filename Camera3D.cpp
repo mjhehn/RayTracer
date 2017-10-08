@@ -69,18 +69,17 @@ void Camera3D::print()
     cout<<"Res: "<<resX<<" "<<resY<<endl;
 }
 
-void Camera3D::pixelPoint(double i, double j)
+Vector3d Camera3D::pixelPoint(double i, double j)
 {
     double px = i/(resX-1)*(imageRect[2] - imageRect[0])+imageRect[0];
     double py = j/(resY-1)*(imageRect[3] - imageRect[1])+imageRect[1];
-    Vector3d zAxis = eye-look;
-    Vector3d xAxis = zAxis.cross(up);
-    zAxis.normalize();
-    xAxis.normalize();
-    Vector3d pixPoint = eye + (distance*zAxis) + (px*xAxis) + (py*up);
-    pixelPoints.conservativeResize(NoChange, pixelPoints.cols()+1);
-    pixelPoints.col(pixelPoints.cols()-1) << pixPoint;
+    Vector3d WV = (eye-look)*-1;
+    WV.normalize();
+    Vector3d UV = up.cross(WV);
+    UV.normalize();
+    Vector3d VV = WV.cross(UV);
+    Vector3d pixPoint = eye + (distance*WV) + (px*UV) + (py*VV);
+    return pixPoint;
 }
-
 
 

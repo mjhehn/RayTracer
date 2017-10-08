@@ -32,27 +32,23 @@ public:
     string comments;
     std::vector<Plane> planes;
     Matrix<double, 4, Dynamic> objectMatrix;
-    double maxLength;   //use this times sqrt of 2 in order to generate a sphere around it.
+    Vector3d center;
+    double sphereRadius;
 
     void print();
     void printToFile(string folder);
     void buildFromFile(string filename);
-
-    bool checkIntersection(Ray& ray);
     
-    void updateMaxLength();
+    void updateExtents();
+    bool checkIntersection(Plane& plane, Ray& ray);
+    bool checkIntersection2(Plane& plane, Ray& ray);
 
     static Matrix4d buildRotationMatrix(double wx, double wy, double wz, double theta);
     static Matrix4d buildTransformationMatrix(double tx, double ty, double tz);
     static Matrix4d buildScaleMatrix(double scale);
 
-    Vector3d solve(int i, Ray ray);
 private:
-    Vector3d solve(Vector3d& a, Vector3d& b, Vector3d& c, Vector3d& d, Vector3d& l);
-    
-
-
-
+    bool checkSphere(Ray& ray);
 };
 
 #endif

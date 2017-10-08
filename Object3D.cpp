@@ -27,6 +27,7 @@ Object3D::Object3D(ifstream& fin)
 	Matrix4d S = buildScaleMatrix(scale);
 	Matrix4d MM = T*S*R;
     objectMatrix = MM*objectMatrix;
+    updateExtents();
 }
 
 void Object3D::buildFromFile(string filename)
@@ -57,8 +58,6 @@ void Object3D::buildFromFile(string filename)
                 ss>>x>>y>>z;
                 objectMatrix.conservativeResize(NoChange, objectMatrix.cols()+1);
                 objectMatrix.col(objectMatrix.cols()-1) << x, y, z, 1;
-                double tempMax  = std::max(std::max(x,y), z);
-                if(tempMax > maxLength) {maxLength = tempMax;}
             }
             else if(ssbuffer == "f")
             {
@@ -127,7 +126,6 @@ void Object3D::print()
     {
         std::cout<<"f "<<j<<std::endl;
     }
-    cout<<"MaxLength: "<<maxLength<<endl;
 }
 
 void Object3D::printToFile(string folder)
@@ -238,52 +236,69 @@ Matrix4d Object3D::buildScaleMatrix(double scale)
 	return S;
 }
 
-void Object3D::updateMaxLength()
+void Object3D::updateExtents()
 {
-    maxLength = objectMatrix.maxCoeff();
+    Vector3d maxInModel;
+    Vector3d minInModel;
+    maxInModel[0] = objectMatrix.row(0).maxCoeff();
+    maxInModel[1] = objectMatrix.row(1).maxCoeff();
+    maxInModel[2] = objectMatrix.row(2).maxCoeff();
+    minInModel[0] = objectMatrix.row(0).minCoeff();
+    minInModel[1] = objectMatrix.row(1).minCoeff();
+    minInModel[2] = objectMatrix.row(2).minCoeff();
+
+    double diameter = maxInModel[0] - minInModel[0];
+    double swap = maxInModel[1] - minInModel[1];
+    diameter = std::max(diameter, swap);
+    swap = maxInModel[2] - minInModel[2];
+    diameter = std::max(diameter, swap);
+
+    center[0] = (maxInModel[0] - minInModel[0])*0.5 + minInModel[0];
+    center[1] = (maxInModel[1] - minInModel[1])*0.5 + minInModel[1];
+    center[2] = (maxInModel[2] - minInModel[2])*0.5 + minInModel[2];
+    sphereRadius = diameter/2;
 }
 
-bool Object3D::checkIntersection(Ray& ray)
+bool Object3D::checkSphere(Ray& ray)
 {
-    bool found = false;
-    Vector3d x = solve(0, ray);
-    double t = x[2];
-    for(unsigned int i = 1; i < planes.size(); i++)
+    Vector3d vVector = center-ray.startPoint;
+    double v = vVector.dot(ray.dirVector);
+    double csq = vVector.dot(vVector);
+    double dsq = sphereRadius*sphereRadius - (csq - v*v);
+    if(dsq <= 0)
     {
-        Vector3d x = solve(i, ray);
-        if( (x[0] >= 0 && x[1] >=0) && (x[0]+x[1]) <= 1)
-        {
-            if( x[2] > 0 && x[2] < t)
-            {
-                t= x[2];
-                found = true;
-            }
-        }
+        return false;
     }
-    ray.t = t;
-    return found;
+
+    double d = sqrt(dsq);
+    ray.t = (v-d);
+    return true;
 }
 
-Vector3d Object3D::solve(Vector3d& a, Vector3d& b, Vector3d& c, Vector3d& d, Vector3d& l)
+bool Object3D::checkIntersection(Plane& plane, Ray& ray)
 {
+    Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
+    Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
+    Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
+    Vector3d d = ray.dirVector;
+    Vector3d l = ray.startPoint;
     Matrix3d M;
-    Vector3d Y;
-    M<<a[0]-b[0], a[0] - c[0], d[0],
+    M<<a[0]-b[0], a[0]-c[0], d[0],
     a[1]-b[1], a[1]-c[1], d[1],
     a[2]-b[2], a[2]-c[2], d[2];
 
+    Vector3d Y;
     Y<<a[0]-l[0], a[1]-l[1], a[2]-l[2];
-    Vector3d x = M.colPivHouseholderQr().solve(Y);
-    return x;
+    Vector3d X = M.householderQr().solve(Y);
+
+    if(X[0] >= 0 && X[1] >= 0)
+    {
+        if((X[0]+X[1])<=1 && X[2] > 0)
+        {
+            ray.t = X[2];
+            return true;
+        }
+    }
+    return false;
 }
 
-Vector3d Object3D::solve(int i, Ray ray)
-{
-    Vector3d a = objectMatrix.col(planes.at(i).point1-1).head<3>();
-    Vector3d b = objectMatrix.col(planes.at(i).point2-1).head<3>();
-    Vector3d c = objectMatrix.col(planes.at(i).point3-1).head<3>();
-    Vector3d d = ray.d;
-    Vector3d l = ray.l;
-    Vector3d x = solve(a, b, c, d, l);
-    return x;
-}

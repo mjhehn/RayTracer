@@ -34,7 +34,7 @@ public:
     std::vector<Object3D> objects;
     std::vector<Sphere> spheres;
     Camera3D camera;
-    std::vector<double> tVals;
+
 
     
 
@@ -42,7 +42,9 @@ public:
     void print();
     void printObjectsToFile();
     void printImage();
-    void getTVals();
+
+    void castRays();
+    bool checkIntersection(int i, Plane& plane, Ray& ray);
 };
 
 #endif

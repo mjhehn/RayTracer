@@ -3,7 +3,12 @@
 
 #include <iostream>
 using std::ostream;
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+using namespace Eigen;
+
 #include <vector>
+#include <Ray.h>
 
 class Sphere
 {
@@ -16,9 +21,22 @@ public:
     Sphere(double cx, double cy, double cz, double rad): radius(rad), x(cx), y(cy), z(cz) {};
     ~Sphere(){};
 
-    inline bool checkIntersection()
+    inline bool checkIntersection(Ray& ray)
     {
-        return 0;
+        Vector3d center;
+        center<<x,y,z;
+        Vector3d vVector = center-ray.startPoint;
+        double v = vVector.dot(ray.dirVector);
+        double csq = vVector.dot(vVector);
+        double dsq = radius*radius - (csq - v*v);
+        if(dsq <= 0)
+        {
+            return false;
+        }
+
+        double d = sqrt(dsq);
+        ray.t = (v-d);
+        return true;
     }
 };
 

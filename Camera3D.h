@@ -7,6 +7,7 @@
 using namespace Eigen;
 #include <vector>
 
+#include <Ray.h>
 #include <Object3D.h>
 
 class Camera3D
@@ -25,11 +26,10 @@ public:
     Vector4d  imageRect;    //L, B, R, T
     int resX;
     int resY;
-    Matrix<double, 3, Dynamic> pixelPoints;
+    vector<double> rayTVals;
 
     void print();
-    void pixelPoint(double i, double j);
-    std::vector<double> getTVals();
+    Vector3d pixelPoint(double i, double j);
 
 };
 
