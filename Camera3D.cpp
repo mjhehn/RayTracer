@@ -78,6 +78,7 @@ Vector3d Camera3D::pixelPoint(double i, double j)
     Vector3d UV = up.cross(WV);
     UV.normalize();
     Vector3d VV = WV.cross(UV);
+    VV.normalize();
     Vector3d pixPoint = eye + (distance*WV) + (px*UV) + (py*VV);
     return pixPoint;
 }

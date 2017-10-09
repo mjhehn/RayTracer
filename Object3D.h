@@ -40,15 +40,14 @@ public:
     void buildFromFile(string filename);
     
     void updateExtents();
-    bool checkIntersection(Plane& plane, Ray& ray);
-    bool checkIntersection2(Plane& plane, Ray& ray);
+    bool checkIntersection(const Plane& plane, Ray& ray);
 
     static Matrix4d buildRotationMatrix(double wx, double wy, double wz, double theta);
-    static Matrix4d buildTransformationMatrix(double tx, double ty, double tz);
+    static Matrix4d buildTransformationMatrix(const double tx, const double ty, const double tz);
     static Matrix4d buildScaleMatrix(double scale);
 
 private:
-    bool checkSphere(Ray& ray);
+    bool checkSphere(const Ray& ray);
 };
 
 #endif

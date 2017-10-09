@@ -89,6 +89,7 @@
         "scoped_allocator": "cpp",
         "shared_mutex": "cpp",
         "clocale": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "xcomplex": "cpp"
     }
 }

@@ -221,14 +221,14 @@ Matrix4d Object3D::buildRotationMatrix(double wx, double wy, double wz, double t
 	return RwInverse*Rtheta*Rw;
 }
 
-Matrix4d Object3D::buildTransformationMatrix(double tx, double ty, double tz)
+Matrix4d Object3D::buildTransformationMatrix(const double tx, const double ty, const double tz)
 {
 	Matrix4d T = Matrix4d::Identity();
 	T.col(3) << tx, ty, tz, 1;
 	return T;
 }
 
-Matrix4d Object3D::buildScaleMatrix(double scale)
+Matrix4d Object3D::buildScaleMatrix(const double scale)
 {
 	Matrix4d S = Matrix4d::Identity();
 	S *= scale;
@@ -247,19 +247,20 @@ void Object3D::updateExtents()
     minInModel[1] = objectMatrix.row(1).minCoeff();
     minInModel[2] = objectMatrix.row(2).minCoeff();
 
-    double diameter = maxInModel[0] - minInModel[0];
-    double swap = maxInModel[1] - minInModel[1];
-    diameter = std::max(diameter, swap);
-    swap = maxInModel[2] - minInModel[2];
-    diameter = std::max(diameter, swap);
+    double xMid= (maxInModel[0] - minInModel[0])*0.5;
+    double yMid = (maxInModel[1] - minInModel[1])*0.5;
+    double zMid = (maxInModel[2] - minInModel[2])*0.5;
 
-    center[0] = (maxInModel[0] - minInModel[0])*0.5 + minInModel[0];
-    center[1] = (maxInModel[1] - minInModel[1])*0.5 + minInModel[1];
-    center[2] = (maxInModel[2] - minInModel[2])*0.5 + minInModel[2];
-    sphereRadius = diameter/2;
+    double majorLength = std::max(std::max(xMid, yMid), zMid);
+    double minorLength = std::min(std::max(xMid, yMid), std::max(zMid, yMid));
+    sphereRadius = sqrt(majorLength*majorLength + minorLength*minorLength);
+
+    center[0] =  xMid+ minInModel[0];
+    center[1] =  yMid+ minInModel[1];
+    center[2] =  zMid+ minInModel[2];
 }
 
-bool Object3D::checkSphere(Ray& ray)
+bool Object3D::checkSphere(const Ray& ray)
 {
     Vector3d vVector = center-ray.startPoint;
     double v = vVector.dot(ray.dirVector);
@@ -269,34 +270,50 @@ bool Object3D::checkSphere(Ray& ray)
     {
         return false;
     }
-
-    double d = sqrt(dsq);
-    ray.t = (v-d);
     return true;
 }
 
-bool Object3D::checkIntersection(Plane& plane, Ray& ray)
+bool Object3D::checkIntersection(const Plane& plane,  Ray& ray)
 {
-    Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
-    Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
-    Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
-    Vector3d d = ray.dirVector;
-    Vector3d l = ray.startPoint;
-    Matrix3d M;
-    M<<a[0]-b[0], a[0]-c[0], d[0],
-    a[1]-b[1], a[1]-c[1], d[1],
-    a[2]-b[2], a[2]-c[2], d[2];
-
-    Vector3d Y;
-    Y<<a[0]-l[0], a[1]-l[1], a[2]-l[2];
-    Vector3d X = M.householderQr().solve(Y);
-
-    if(X[0] >= 0 && X[1] >= 0)
+    if(checkSphere(ray))
     {
-        if((X[0]+X[1])<=1 && X[2] > 0)
+        Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
+        Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
+        Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
+        Vector3d d = ray.dirVector;
+        Vector3d l = ray.startPoint;
+        Matrix3d M;
+        M<<a[0]-b[0], a[0]-c[0], d[0],
+        a[1]-b[1], a[1]-c[1], d[1],
+        a[2]-b[2], a[2]-c[2], d[2];
+    
+        Matrix3d Mi = M;
+    
+        Vector3d Y;
+        Y<<a[0]-l[0], a[1]-l[1], a[2]-l[2];
+        
+        double mDeterminant = M.determinant();
+        if(mDeterminant != 0)
         {
-            ray.t = X[2];
-            return true;
+            Mi.col(0) = Y;
+            double beta = Mi.determinant()/mDeterminant;
+            if(beta>=0)
+            {
+                Mi = M;
+                Mi.col(1) = Y;
+                double gamma = Mi.determinant()/mDeterminant;
+                if( gamma>= 0 && (beta+gamma)<=1)
+                {
+                    Mi = M;
+                    Mi.col(2) = Y;
+                    double t = Mi.determinant()/mDeterminant;
+                    if( t > 0)
+                    {
+                        ray.t = t;
+                        return true;
+                    }
+                }
+            }
         }
     }
     return false;
