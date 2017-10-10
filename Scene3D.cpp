@@ -116,7 +116,7 @@ void Scene3D::castRays()
     for(int j = 0; j < camera.resY; ++j){
         for(int i = 0; i < camera.resX; ++i){
             Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
-            cout<<ray<<endl;
+            //cout<<ray<<endl;
             double lowt = 0;
             for(unsigned int k = 0; k<objects.size(); ++k){
                 //check for intersection with sphere defined by the object.

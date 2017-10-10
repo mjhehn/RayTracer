@@ -38,3 +38,6 @@
 # End of https://www.gitignore.io/api/c++
 
 Eigen/
+*.obj
+*.opm
+*.txt
