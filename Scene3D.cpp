@@ -83,7 +83,7 @@ void Scene3D::printImage()
     int g = 0;
     int b = 0;
     int j = 1;
-    for(int i = camera.rayTVals.size()-1; i>=0; i--)
+    for(int i = camera.rayTVals.size()-1; i>=0; --i)
     {
         if(camera.rayTVals[i] == 0)
         {
@@ -102,7 +102,7 @@ void Scene3D::printImage()
         {
             fout<<"\n";
         }
-        j++;
+        ++j;
     }
     fout<<"\n";      
     
@@ -113,13 +113,14 @@ void Scene3D::castRays()
 {
     bool tsNotSet = true;
     bool intersected = false;
-    for(int j = 0; j < camera.resY; j++){
-        for(int i = 0; i < camera.resX; i++){
+    for(int j = 0; j < camera.resY; ++j){
+        for(int i = 0; i < camera.resX; ++i){
             Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
+            cout<<ray<<endl;
             double lowt = 0;
-            for(unsigned int k = 0; k<objects.size(); k++){
+            for(unsigned int k = 0; k<objects.size(); ++k){
                 //check for intersection with sphere defined by the object.
-                for(unsigned int l = 0; l < objects[k].planes.size(); l++){
+                for(unsigned int l = 0; l < objects[k].planes.size(); ++l){
                     intersected = objects[k].checkIntersection(objects[k].planes[l], ray);   
                     if(intersected){
                         if(lowt == 0){lowt = ray.t;}
@@ -132,7 +133,6 @@ void Scene3D::castRays()
                         else{
                             lowt = std::min(lowt, ray.t);
                             tmin = std::min(tmin, ray.t);
-                            
                         }
                     }
                     else{;}
@@ -141,7 +141,7 @@ void Scene3D::castRays()
             }
 
             //checkspheres
-            for(unsigned int k = 0; k<spheres.size(); k++){
+            for(unsigned int k = 0; k<spheres.size(); ++k){
                 intersected = spheres[k].checkIntersection(ray);   
                 if(intersected){
                     if(lowt == 0){lowt = ray.t;}
@@ -165,5 +165,5 @@ void Scene3D::castRays()
             camera.rayTVals.push_back(ray.t);
         }
     }
-    cout<<tmin<<" "<<tmax<<endl;
+    //cout<<tmin<<" "<<tmax<<endl;
 }

@@ -26,6 +26,12 @@ Camera3D::Camera3D(ifstream& fin)
             pixelPoint(j, i);
         }
     }
+    WV = (eye-look)*-1;
+    WV.normalize();
+    UV = up.cross(WV);
+    UV.normalize();
+    VV = WV.cross(UV);
+    VV.normalize();
 }
 
 Camera3D::~Camera3D()
@@ -73,12 +79,6 @@ Vector3d Camera3D::pixelPoint(double i, double j)
 {
     double px = i/(resX-1)*(imageRect[2] - imageRect[0])+imageRect[0];
     double py = j/(resY-1)*(imageRect[3] - imageRect[1])+imageRect[1];
-    Vector3d WV = (eye-look)*-1;
-    WV.normalize();
-    Vector3d UV = up.cross(WV);
-    UV.normalize();
-    Vector3d VV = WV.cross(UV);
-    VV.normalize();
     Vector3d pixPoint = eye + (distance*WV) + (px*UV) + (py*VV);
     return pixPoint;
 }

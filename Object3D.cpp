@@ -39,7 +39,7 @@ void Object3D::buildFromFile(string filename)
     {
         string buffer = "";
         std::getline(fin, buffer);
-        while(!fin.fail() && buffer[0] == '#'){
+        while(buffer[0] == '#' && !fin.fail()){
             comments.append("\n"+buffer);
             std::getline(fin, buffer);
         }
@@ -117,7 +117,7 @@ Object3D::~Object3D()
 void Object3D::print()
 {
     std::cout<<objectName<<"\n"<<comments<<"\n";
-    for (int i = 0; i < objectMatrix.cols(); i++)   
+    for (int i = 0; i < objectMatrix.cols(); ++i)   
     {
         std::cout<<"v "<<objectMatrix.col(i).row(0)<<" "<<objectMatrix.col(i).row(1)<<" "<<objectMatrix.col(i).row(2)<<"\n";
     }
@@ -231,7 +231,7 @@ Matrix4d Object3D::buildTransformationMatrix(const double tx, const double ty, c
 Matrix4d Object3D::buildScaleMatrix(const double scale)
 {
 	Matrix4d S = Matrix4d::Identity();
-	S *= scale;
+	S = S*scale;
 	S.col(3).tail(1) << 1;
 	return S;
 }
@@ -266,45 +266,45 @@ bool Object3D::checkSphere(const Ray& ray)
     double v = vVector.dot(ray.dirVector);
     double csq = vVector.dot(vVector);
     double dsq = sphereRadius*sphereRadius - (csq - v*v);
-    if(dsq <= 0)
+    if(dsq > 0)
     {
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
-bool Object3D::checkIntersection(const Plane& plane,  Ray& ray)
+bool Object3D::checkIntersection(const Plane& plane, Ray& ray)
 {
     if(checkSphere(ray))
     {
         Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
         Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
         Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
-        Vector3d d = ray.dirVector;
-        Vector3d l = ray.startPoint;
         Matrix3d M;
-        M<<a[0]-b[0], a[0]-c[0], d[0],
-        a[1]-b[1], a[1]-c[1], d[1],
-        a[2]-b[2], a[2]-c[2], d[2];
+
+        M.col(0) = a-b;     //cramer's rule begins
+        M.col(1) = a-c;
+        M.col(2) = ray.dirVector;
     
         Matrix3d Mi = M;
-    
-        Vector3d Y;
-        Y<<a[0]-l[0], a[1]-l[1], a[2]-l[2];
+        Vector3d Y = a - ray.startPoint;
+        Vector3d swap;
         
         double mDeterminant = M.determinant();
         if(mDeterminant != 0)
         {
+            swap = Mi.col(0);   //opimization for swap rather than a full copy
             Mi.col(0) = Y;
             double beta = Mi.determinant()/mDeterminant;
             if(beta>=0)
             {
-                Mi = M;
+                Mi.col(0) = swap;
+                swap = Mi.col(1);
                 Mi.col(1) = Y;
                 double gamma = Mi.determinant()/mDeterminant;
-                if( gamma>= 0 && (beta+gamma)<=1)
+                if( (beta+gamma)<=1 && gamma>= 0)
                 {
-                    Mi = M;
+                    Mi.col(1) = swap;
                     Mi.col(2) = Y;
                     double t = Mi.determinant()/mDeterminant;
                     if( t > 0)

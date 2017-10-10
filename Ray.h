@@ -27,7 +27,7 @@ public:
 
 inline ostream& operator<<(ostream& out, const Ray& r)
 {
-    return out<<"\nT: "<<r.t<<" Pos: "<<r.startPoint<<"\n Vector: "<<r.dirVector<<"\n";
+    return out<<"\nT: "<<r.t<<" Pos: "<<(RowVector3d)r.startPoint<<"\n Vector: "<<(RowVector3d)r.dirVector<<"\n";
 }
 
 inline bool operator<(const Ray& lhs, const Ray& rhs)

@@ -13,6 +13,7 @@ using std::vector;
 #include <string>
 using std::string;
 #include <regex>
+#include <algorithm>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 using namespace Eigen;

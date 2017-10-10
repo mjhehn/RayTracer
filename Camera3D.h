@@ -22,6 +22,9 @@ public:
     Vector3d eye;
     Vector3d look;
     Vector3d  up;
+    Vector3d WV;
+    Vector3d UV;
+    Vector3d VV;
     double distance;
     Vector4d  imageRect;    //L, B, R, T
     int resX;
