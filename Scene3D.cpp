@@ -116,12 +116,11 @@ void Scene3D::castRays()
     for(int j = 0; j < camera.resY; ++j){
         for(int i = 0; i < camera.resX; ++i){
             Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
-            //cout<<ray<<endl;
             double lowt = 0;
             for(unsigned int k = 0; k<objects.size(); ++k){
                 //check for intersection with sphere defined by the object.
                 for(unsigned int l = 0; l < objects[k].planes.size(); ++l){
-                    intersected = objects[k].checkIntersection(objects[k].planes[l], ray);   
+                    intersected = objects[k].checkIntersection(l, ray);   
                     if(intersected){
                         if(lowt == 0){lowt = ray.t;}
                         else{;}

@@ -40,7 +40,7 @@ public:
     void buildFromFile(string filename);
     
     void updateExtents();
-    bool checkIntersection(const Plane& plane, Ray& ray);
+    bool checkIntersection(const int& i, Ray& ray);
 
     static Matrix4d buildRotationMatrix(double wx, double wy, double wz, double theta);
     static Matrix4d buildTransformationMatrix(const double tx, const double ty, const double tz);

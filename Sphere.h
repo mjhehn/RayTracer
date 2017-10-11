@@ -29,7 +29,7 @@ public:
         double v = vVector.dot(ray.dirVector);
         double csq = vVector.dot(vVector);
         double dsq = radius*radius - (csq - v*v);
-        if(dsq <= 0)
+        if(dsq < 0)
         {
             return false;
         }

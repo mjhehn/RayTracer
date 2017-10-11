@@ -265,21 +265,17 @@ bool Object3D::checkSphere(const Ray& ray)
     Vector3d vVector = center-ray.startPoint;
     double v = vVector.dot(ray.dirVector);
     double csq = vVector.dot(vVector);
-    double dsq = sphereRadius*sphereRadius - (csq - v*v);
-    if(dsq > 0)
-    {
-        return true;
-    }
-    return false;
+    double dsq = pow(sphereRadius, 2.0) - (csq - pow(v, 2.0));
+    return dsq < 0;
 }
 
-bool Object3D::checkIntersection(const Plane& plane, Ray& ray)
+bool Object3D::checkIntersection(const int& i, Ray& ray)
 {
     if(checkSphere(ray))
     {
-        Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
-        Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
-        Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
+        Vector3d a = objectMatrix.col(planes[i].point1-1).head<3>();
+        Vector3d b = objectMatrix.col(planes[i].point2-1).head<3>();
+        Vector3d c = objectMatrix.col(planes[i].point3-1).head<3>();
         Matrix3d M;
 
         M.col(0) = a-b;     //cramer's rule begins

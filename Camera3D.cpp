@@ -19,19 +19,13 @@ Camera3D::Camera3D(ifstream& fin)
     fin>>buffer>>distance;
     fin>>buffer>>imageRect[0]>>imageRect[1]>>imageRect[2]>>imageRect[3];
     fin>>buffer>>resX>>resY;
-    for(int i = 0; i < resY; i++)
-    {
-        for(int j = 0; j < resX; j++)
-        {
-            pixelPoint(j, i);
-        }
-    }
     WV = (eye-look)*-1;
     WV.normalize();
     UV = up.cross(WV);
     UV.normalize();
     VV = WV.cross(UV);
     VV.normalize();
+    rayTVals.reserve(resX*resY);
 }
 
 Camera3D::~Camera3D()
