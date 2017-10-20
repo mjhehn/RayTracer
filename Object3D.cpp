@@ -43,6 +43,8 @@ void Object3D::buildFromFile(string filename)
             comments.append("\n"+buffer);
             std::getline(fin, buffer);
         }
+        bool materialSet = false;
+        string currentMaterial = "";
         comments.append("\n #modified/translated version of "+filename);
         while(!fin.fail())
         {
@@ -58,6 +60,15 @@ void Object3D::buildFromFile(string filename)
                 ss>>x>>y>>z;
                 objectMatrix.conservativeResize(NoChange, objectMatrix.cols()+1);
                 objectMatrix.col(objectMatrix.cols()-1) << x, y, z, 1;
+            }
+            else if(ssbuffer == "vn")
+            {
+                double x = 0;
+                double y = 0;
+                double z = 0;
+                ss>>x>>y>>z;
+                normalsMatrix.conservativeResize(NoChange, normalsMatrix.cols()+1);
+                normalsMatrix.col(normalsMatrix.cols()-1) << x, y, z, 1;
             }
             else if(ssbuffer == "f")
             {
@@ -77,7 +88,7 @@ void Object3D::buildFromFile(string filename)
                 }
                 
                 if(normals) {buffer = std::regex_replace(buffer, std::regex(R"([/]{2})"), " // ");}
-                else{buffer = std::regex_replace(buffer, std::regex(R"([/]{1})"), " / "); }//remove /'s from buffer lines, which are used for normal vectors for planes
+                else{buffer = std::regex_replace(buffer, std::regex(R"([/]{1})"), " / "); }//remove /'s from buffer lines, which are used for normal vectors for faces
                 
                 ss.str(buffer);
                 string temp;
@@ -97,7 +108,25 @@ void Object3D::buildFromFile(string filename)
                     else{;}
                     ss>>temp;
                 }
-                planes.push_back(Plane(textures, normals, tempPoints));
+                if(materialSet)
+                {
+                    faces.push_back(Face(textures, normals, tempPoints, currentMaterial));
+                }
+                else{
+                    faces.push_back(Face(textures, normals, tempPoints));
+                }
+                
+            }
+            else if(ssbuffer == "usemtl")
+            {
+                ss>>currentMaterial;
+                materialSet = true;
+            }
+            else if(ssbuffer == "mtllib")
+            {
+                generateMaterialsList(ss);
+                currentMaterial = mat[0].name;
+                materialSet = true;
             }
             else{;}
             ss.flush();
@@ -111,7 +140,7 @@ void Object3D::buildFromFile(string filename)
 Object3D::~Object3D()
 {
     objectName="";
-    planes.clear();
+    faces.clear();
 }
 
 void Object3D::print()
@@ -122,7 +151,7 @@ void Object3D::print()
         std::cout<<"v "<<objectMatrix.col(i).row(0)<<" "<<objectMatrix.col(i).row(1)<<" "<<objectMatrix.col(i).row(2)<<"\n";
     }
 
-    for(const auto j: planes)   //c++11 range based looping
+    for(const auto j: faces)   //c++11 range based looping
     {
         std::cout<<"f "<<j<<std::endl;
     }
@@ -172,7 +201,7 @@ void Object3D::printToFile(string folder)
         fout<<"v "<<objectMatrix.col(i).row(0)<<" "<<objectMatrix.col(i).row(1)<<" "<<objectMatrix.col(i).row(2)<<"\n";
     }
 
-    for(const auto j: planes)   //c++11 range based looping
+    for(const auto j: faces)   //c++11 range based looping
     {
         fout<<"f "<<j<<"\n";
     }
@@ -273,9 +302,9 @@ bool Object3D::checkIntersection(const int& i, Ray& ray)
 {
     if(checkSphere(ray))
     {
-        Vector3d a = objectMatrix.col(planes[i].point1-1).head<3>();
-        Vector3d b = objectMatrix.col(planes[i].point2-1).head<3>();
-        Vector3d c = objectMatrix.col(planes[i].point3-1).head<3>();
+        Vector3d a = objectMatrix.col(faces[i].point1-1).head<3>();
+        Vector3d b = objectMatrix.col(faces[i].point2-1).head<3>();
+        Vector3d c = objectMatrix.col(faces[i].point3-1).head<3>();
         Matrix3d M;
 
         M.col(0) = a-b;     //cramer's rule begins
@@ -315,3 +344,46 @@ bool Object3D::checkIntersection(const int& i, Ray& ray)
     return false;
 }
 
+void Object3D::generateMaterialsList(stringstream& ss)
+{
+    string filename;
+    ss>>filename;
+    ifstream fin;
+    fin.open(filename);
+    string temp = "";
+    string matName = "";
+    Vector3d Ka;
+    Vector3d Kd;
+    Vector3d Ks;
+    double r;
+    double g;
+    double b;
+    while(!fin.fail())
+    {
+        fin>>temp;
+        if(temp == "newmtl")
+        {
+            fin>>matName;
+        }
+        else if(temp == "Ka")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Ka<<r,g,b;
+        }
+        else if(temp == "Kd")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Kd<<r,g,b;
+        }
+        else if(temp == "Ks")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Ks<<r,g,b;
+        }
+        else if(temp == "illum")
+        {
+            mat.push_back(Material(matName, Ka, Kd, Ks));
+        }
+    }
+    fin.close();  
+}

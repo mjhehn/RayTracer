@@ -3,23 +3,6 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
-        {
-            "taskName": "echo",
-            "type": "shell",
-            "command": "echo Hello"
-        },
-
-        {
-            "taskName": "build a1",
-            "type": "shell",
-            "command": "g++",
-            "args": [
-                "-g", "-Wall", "-std=c++11", "-I *.cpp", " -o modeltoworld"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        }
+        
     ]
 }

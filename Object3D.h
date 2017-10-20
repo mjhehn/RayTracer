@@ -17,7 +17,7 @@ using std::string;
 #include <Eigen/Geometry>
 using namespace Eigen;
 
-#include <Plane.h>
+#include <Face.h>
 #include <Ray.h>
 
 #define PI 3.14159265	//pi definition
@@ -30,7 +30,9 @@ public:
     ~Object3D();
     string objectName;
     string comments;
-    std::vector<Plane> planes;
+    std::vector<Face> faces;
+    std::vector<Material> mat;
+    Matrix<double, 4, Dynamic> normalsMatrix;
     Matrix<double, 4, Dynamic> objectMatrix;
     Vector3d center;
     double sphereRadius;
@@ -45,6 +47,7 @@ public:
     static Matrix4d buildRotationMatrix(double wx, double wy, double wz, double theta);
     static Matrix4d buildTransformationMatrix(const double tx, const double ty, const double tz);
     static Matrix4d buildScaleMatrix(double scale);
+    void generateMaterialsList(stringstream& ss);
 
 private:
     bool checkSphere(const Ray& ray);

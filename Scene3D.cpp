@@ -29,13 +29,21 @@ Scene3D::Scene3D(string imageFileName, string driverFileName)
             double z;
             double radius;
             fin>>x>>y>>z>>radius;
-            Sphere newSphere(x,y,z,radius);
+            Sphere newSphere(x,y,z,radius, Material(fin, true));
             spheres.push_back(newSphere);
         }
         else if(buffer == "eye")
         {
             Camera3D tempCam(fin);
             camera = tempCam;
+        }
+        else if(buffer == "ambient")
+        {
+            fin>>ambient[0]>>ambient[1]>>ambient[2];
+        }
+        else if(buffer == "light")
+        {
+            lights.push_back(Light3D(fin));
         }
 		fin>>buffer;
     }
@@ -116,10 +124,11 @@ void Scene3D::castRays()
     for(int j = 0; j < camera.resY; ++j){
         for(int i = 0; i < camera.resX; ++i){
             Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
+            //if(i<10){cout<<(RowVector3d)ray.dirVector<<endl;}
             double lowt = 0;
             for(unsigned int k = 0; k<objects.size(); ++k){
                 //check for intersection with sphere defined by the object.
-                for(unsigned int l = 0; l < objects[k].planes.size(); ++l){
+                for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
                     intersected = objects[k].checkIntersection(l, ray);   
                     if(intersected){
                         if(lowt == 0){lowt = ray.t;}

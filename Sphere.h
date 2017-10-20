@@ -9,6 +9,7 @@ using namespace Eigen;
 
 #include <vector>
 #include <Ray.h>
+#include <Material.h>
 
 class Sphere
 {
@@ -17,8 +18,8 @@ public:
     double x;
     double y;
     double z;
-
-    Sphere(double cx, double cy, double cz, double rad): radius(rad), x(cx), y(cy), z(cz) {};
+    Material material;
+    Sphere(double cx, double cy, double cz, double rad, Material passedMat): radius(rad), x(cx), y(cy), z(cz), material(passedMat) {};
     ~Sphere(){};
 
     inline bool checkIntersection(Ray& ray)

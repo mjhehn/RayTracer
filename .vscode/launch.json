@@ -5,10 +5,10 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/mnt/G/Users/MJH/OneDrive/CSU/cs410/a1/modeltoworld",
-            "args": ["-fThreading"],
+            "program": "/mnt/g/Users/MJH/OneDrive/CSU/cs410/workspace/raytracer",
+            "args": ["driver02.txt", "driver00.ppm"],
             "stopAtEntry": false,
-            "cwd": "/mnt/G/Users/MJH/OneDrive/CSU/cs410/a1",
+            "cwd": "/mnt/g/Users/MJH/OneDrive/CSU/cs410/workspace",
             "environment": [],
             "externalConsole": true,
             "windows": {
@@ -28,7 +28,33 @@
                 "debuggerPath": "/usr/bin/gdb"
             },
             "sourceFileMap": {
-                "/mnt/z": "z:\\"
+                "/mnt/g": "g:\\"
+            }
+        },
+        {
+            "name": "C++ Attach",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/mnt/g/Users/MJH/OneDrive/CSU/cs410/workspace/raytracer",
+            "processId": "${command:pickRemoteProcess}",
+            "windows": {
+                "MIMode": "gdb",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": true
+                    }
+                ]
+            },
+            "pipeTransport": {
+                "pipeCwd": "",
+                "pipeProgram": "c:\\windows\\sysnative\\bash.exe",
+                "pipeArgs": ["-c"],
+                "debuggerPath": "/usr/bin/gdb"
+            },
+            "sourceFileMap": {
+                "/mnt/g": "g:\\"
             }
         }
     ]
