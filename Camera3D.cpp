@@ -26,6 +26,8 @@ Camera3D::Camera3D(ifstream& fin)
     VV = WV.cross(UV);
     VV.normalize();
     rayTVals.reserve(resX*resY);
+    image.resize(3, resX*resY);
+    imagePosition = 0;
 }
 
 Camera3D::~Camera3D()
@@ -75,6 +77,12 @@ Vector3d Camera3D::pixelPoint(double i, double j)
     double py = j/(resY-1)*(imageRect[3] - imageRect[1])+imageRect[1];
     Vector3d pixPoint = eye + (distance*WV) + (px*UV) + (py*VV);
     return pixPoint;
+}
+
+void Camera3D::addToImage(Vector3d& pixel)
+{
+    image.col(imagePosition) = pixel;
+    ++imagePosition;
 }
 
 

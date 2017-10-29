@@ -30,8 +30,11 @@ public:
     int resX;
     int resY;
     vector<double> rayTVals;
+    Matrix<double, 3, Dynamic> image;
+    int imagePosition;
 
     void print();
+    void addToImage(Vector3d& pixel);
     Vector3d pixelPoint(double i, double j);
 
 };

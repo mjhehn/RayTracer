@@ -80,10 +80,10 @@ void Scene3D::print()
 }
 
  //ray is pixelPoint-eye normalized
-void Scene3D::printImage()
+void Scene3D::printTImage()
 {
     std::ofstream fout;
-    fout.open(imageName);
+    fout.open("T"+imageName);
     fout<<"P3"<<"\n";
     fout<<camera.resX<<" "<<camera.resY<<" "<<255<<"\n";
     double ratio = 0;
@@ -117,60 +117,154 @@ void Scene3D::printImage()
     fout.close();
 }
 
+void Scene3D::printImage()
+{
+    std::ofstream fout;
+    fout.open(imageName);
+    fout<<"P3"<<"\n";
+    fout<<camera.resX<<" "<<camera.resY<<" "<<255<<"\n";
+    int j = 1;
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    for(unsigned int i = 0; i < camera.image.cols(); ++i)
+    {   
+        r = camera.image.col(i)[0]*255;
+        g = camera.image.col(i)[1]*255;
+        b = camera.image.col(i)[2]*255;
+        r = std::max(0, std::min(255, r));
+        g = std::max(0, std::min(255, g));
+        b = std::max(0, std::min(255, b));
+        fout<<r<<" "<<g<<" "<<b<<" ";
+        if((j)%camera.resX == 0)
+        {
+            fout<<"\n";
+        }
+        ++j;
+    }
+    fout<<"\n";      
+    
+    fout.close();
+}
+
+void Scene3D::rayTrace(Ray& ray, Vector3d& color, bool& tsNotSet)
+{
+    double lowt = 0;
+    Vector3d hitNormal;
+    Vector3d hitPoint;
+    Material mat;
+    bool intersected = false;
+    for(unsigned int k = 0; k<objects.size(); ++k){
+        //check for intersection with sphere defined by the object.
+        for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
+            intersected = objects[k].checkIntersection(l, ray);   
+            if(intersected){
+                if(lowt == 0){lowt = ray.t;}
+                else{;}
+
+                if(tsNotSet){
+                    tmin = tmax = ray.t;
+                    tsNotSet = false;
+                }
+                else //if (ray.t == std::min(lowt, ray.t))
+                {
+                    lowt = std::min(lowt, ray.t);
+                    tmin = std::min(tmin, ray.t);
+
+                    //average the normals of the corners of the face.
+                    Vector3d A = objects[k].objectMatrix.col(objects[k].faces[l].point1-1).head<3>();
+                    Vector3d B = objects[k].objectMatrix.col(objects[k].faces[l].point2-1).head<3>();
+                    Vector3d C = objects[k].objectMatrix.col(objects[k].faces[l].point3-1).head<3>();
+                    hitNormal  = (B-A).cross((C-A));
+                    mat = *(std::find(objects[k].mat.begin(), objects[k].mat.end(), objects[k].faces[l].material));
+                    hitNormal.normalize();
+                    color = colorize(ray, hitNormal, mat);
+                }
+            }
+            else{;}
+        }
+        
+    }
+
+    //checkspheres
+    for(unsigned int k = 0; k<spheres.size(); ++k){
+        intersected = spheres[k].checkIntersection(ray);   
+        if(intersected){
+            if(lowt == 0){lowt = ray.t;}
+            else{;}
+
+            if(tsNotSet){
+                tmin = tmax = ray.t;
+                tsNotSet = false;
+            }
+            else //if(ray.t == std::min(lowt, ray.t))
+            {
+                lowt = std::min(lowt, ray.t);
+                tmin = std::min(tmin, ray.t); 
+                hitNormal = (ray.startPoint + ray.t*ray.dirVector) - spheres[k].center();
+                mat = spheres[k].material;
+                hitNormal.normalize();
+                color = colorize(ray, hitNormal, mat);
+            }
+        }
+        else{;}
+    }
+    ray.t = lowt;
+    tmax = std::max(tmax, ray.t);
+    return; //return color here
+}
+
+Vector3d Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat )
+{
+    Vector3d hitPoint =(ray.startPoint + ray.t*ray.dirVector);
+    Vector3d color;
+
+    color<<  ambient[0]*mat.Ka[0], ambient[1]*mat.Ka[1], ambient[2]*mat.Ka[2];
+    for(unsigned int i = 0; i < lights.size(); i++)
+    {
+        Vector3d vectorToLight;
+        vectorToLight << lights[i].location[0] - hitPoint[0], lights[i].location[1] - hitPoint[1], lights[i].location[2] - hitPoint[2];
+        vectorToLight.normalize();
+        if(hitNormal.dot(vectorToLight) > 0.0)
+        {
+            double temp = hitNormal.dot(vectorToLight);
+            color[0] += (mat.Kd[0]*lights[i].rgb[0])*temp;
+            color[1] += (mat.Kd[1]*lights[i].rgb[1])*temp;
+            color[2] += (mat.Kd[2]*lights[i].rgb[2])*temp;
+
+            Vector3d vectorToCamera;
+            vectorToCamera = ray.startPoint - hitPoint;
+            vectorToCamera.normalize();
+            Vector3d spR = (2*(temp)*hitNormal)-vectorToLight;
+
+            double spectralFalloff = pow((vectorToCamera.dot(spR)),mat.phong);
+            color[0] += mat.Ks[0] * lights[i].rgb[0]* spectralFalloff;
+            color[1] += mat.Ks[1] * lights[i].rgb[1]* spectralFalloff;
+            color[2] += mat.Ks[2] * lights[i].rgb[2]* spectralFalloff;
+        }
+    }
+
+    return color;
+}
+
 void Scene3D::castRays()
 {
     bool tsNotSet = true;
-    bool intersected = false;
-    for(int j = 0; j < camera.resY; ++j){
-        for(int i = 0; i < camera.resX; ++i){
+    for(int j =  camera.resY-1; j >=0; --j){
+        for(int i =  camera.resX-1; i >=0; --i){
             Ray ray(camera.pixelPoint(i, j), 0, camera.eye);
             //if(i<10){cout<<(RowVector3d)ray.dirVector<<endl;}
-            double lowt = 0;
-            for(unsigned int k = 0; k<objects.size(); ++k){
-                //check for intersection with sphere defined by the object.
-                for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
-                    intersected = objects[k].checkIntersection(l, ray);   
-                    if(intersected){
-                        if(lowt == 0){lowt = ray.t;}
-                        else{;}
+            Vector3d color;
+            color[0] = 0;
+            color[1] = 0;
+            color[2] = 0;
+                //background color;
 
-                        if(tsNotSet){
-                            tmin = tmax = ray.t;
-                            tsNotSet = false;
-                        }
-                        else{
-                            lowt = std::min(lowt, ray.t);
-                            tmin = std::min(tmin, ray.t);
-                        }
-                    }
-                    else{;}
-                }
-                
-            }
-
-            //checkspheres
-            for(unsigned int k = 0; k<spheres.size(); ++k){
-                intersected = spheres[k].checkIntersection(ray);   
-                if(intersected){
-                    if(lowt == 0){lowt = ray.t;}
-                    else{;}
-
-                    if(tsNotSet){
-                        tmin = tmax = ray.t;
-                        tsNotSet = false;
-                    }
-                    else{
-                        lowt = std::min(lowt, ray.t);
-                        tmin = std::min(tmin, ray.t);
-                        
-                    }
-                }
-                else{;}
-            }
-            ray.t = lowt;
-            tmax = std::max(tmax, ray.t);
+            rayTrace(ray, color, tsNotSet);
             
+            //swap to inserting rgb color into camera.image here
             camera.rayTVals.push_back(ray.t);
+            camera.addToImage(color);
         }
     }
     //cout<<tmin<<" "<<tmax<<endl;

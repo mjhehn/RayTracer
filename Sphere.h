@@ -39,6 +39,13 @@ public:
         ray.t = (v-d);
         return true;
     }
+
+    inline Vector3d center()
+    {
+        Vector3d center;
+        center<<x,y,z;
+        return center;
+    }
 };
 
 inline ostream& operator<<(ostream& out, const Sphere& sphere)

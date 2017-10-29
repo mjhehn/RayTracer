@@ -27,6 +27,7 @@ Object3D::Object3D(ifstream& fin)
 	Matrix4d S = buildScaleMatrix(scale);
 	Matrix4d MM = T*S*R;
     objectMatrix = MM*objectMatrix;
+    normalsMatrix = MM*normalsMatrix;
     updateExtents();
 }
 
@@ -295,7 +296,7 @@ bool Object3D::checkSphere(const Ray& ray)
     double v = vVector.dot(ray.dirVector);
     double csq = vVector.dot(vVector);
     double dsq = pow(sphereRadius, 2.0) - (csq - pow(v, 2.0));
-    return dsq < 0;
+    return !(dsq < 0);
 }
 
 bool Object3D::checkIntersection(const int& i, Ray& ray)
@@ -358,6 +359,7 @@ void Object3D::generateMaterialsList(stringstream& ss)
     double r;
     double g;
     double b;
+    double phong = 16;
     while(!fin.fail())
     {
         fin>>temp;
@@ -382,7 +384,11 @@ void Object3D::generateMaterialsList(stringstream& ss)
         }
         else if(temp == "illum")
         {
-            mat.push_back(Material(matName, Ka, Kd, Ks));
+            mat.push_back(Material(matName, phong, Ka, Kd, Ks));
+        }
+        else if(temp == "Ns")
+        {
+            fin>>phong;
         }
     }
     fin.close();  

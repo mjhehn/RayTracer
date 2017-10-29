@@ -38,7 +38,7 @@ public:
     std::vector<Light3D> lights;
     double ambient[3];
     Camera3D camera;
-
+    
 
     
 
@@ -46,8 +46,12 @@ public:
     void print();
     void printObjectsToFile();
     void printImage();
+    void printTImage();
 
+    void rayTrace(Ray& ray, Vector3d& color, bool& tsNotSet);
+    Vector3d colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat );
     void castRays();
+    void castRaysOld();
     bool checkIntersection(int i, Face& Face, Ray& ray);
 };
 
