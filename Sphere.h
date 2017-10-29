@@ -26,16 +26,16 @@ public:
     {
         Vector3d center;
         center<<x,y,z;
-        Vector3d vVector = center-ray.startPoint;
-        double v = vVector.dot(ray.dirVector);
-        double csq = vVector.dot(vVector);
-        double dsq = radius*radius - (csq - v*v);
-        if(dsq < 0)
+        Vector3d cVector = center-ray.startPoint;
+        double v = cVector.dot(ray.dirVector);
+        double csquared = cVector.dot(cVector);
+        double dsquared = radius*radius - (csquared - v*v);
+        if(dsquared < 0)
         {
             return false;
         }
 
-        double d = sqrt(dsq);
+        double d = sqrt(dsquared);
         ray.t = (v-d);
         return true;
     }

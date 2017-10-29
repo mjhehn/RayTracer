@@ -172,10 +172,22 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, bool& tsNotSet)
                     tmin = std::min(tmin, ray.t);
                     
                     //average the normals of the corners of the face.
-                    Vector3d A = objects[k].objectMatrix.col(objects[k].faces[l].point1-1).head<3>();
-                    Vector3d B = objects[k].objectMatrix.col(objects[k].faces[l].point2-1).head<3>();
-                    Vector3d C = objects[k].objectMatrix.col(objects[k].faces[l].point3-1).head<3>();
-                    hitNormal = (B-A).cross(C-A)*-1;
+                    
+                    if(objects[k].faces[l].normals)
+                    {
+                        hitNormal = (-1.0)*(1.0/3.0)*(objects[k].normalsMatrix.col(objects[k].faces[l].point1Normal-1).head<3>() + objects[k].normalsMatrix.col(objects[k].faces[l].point2Normal-1).head<3>() + objects[k].normalsMatrix.col(objects[k].faces[l].point3Normal-1).head<3>());                        
+                        //cout<<endl<<objects[k].normalsMatrix.col(objects[k].faces[l].point1Normal-1).head<3>()<<" + "<<objects[k].normalsMatrix.col(objects[k].faces[l].point2Normal-1).head<3>()<<" + "<<objects[k].normalsMatrix.col(objects[k].faces[l].point3Normal-1).head<3>()<<endl;
+                        //cout<<hitNormal<<endl;
+                    }
+                    else{
+                        Vector3d A = objects[k].objectMatrix.col(objects[k].faces[l].point1-1).head<3>();
+                        Vector3d B = objects[k].objectMatrix.col(objects[k].faces[l].point2-1).head<3>();
+                        Vector3d C = objects[k].objectMatrix.col(objects[k].faces[l].point3-1).head<3>();
+                        //cout<<A<<B<<C<<endl;
+
+                        hitNormal = (B-A).cross(C-A)*-1;
+                    }
+                    
                     mat = *(std::find(objects[k].mat.begin(), objects[k].mat.end(), objects[k].faces[l].material));
                     hitNormal.normalize();
                     color = colorize(ray, hitNormal, mat);

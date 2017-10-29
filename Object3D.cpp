@@ -27,6 +27,8 @@ Object3D::Object3D(ifstream& fin)
 	Matrix4d S = buildScaleMatrix(scale);
 	Matrix4d MM = T*S*R;
     objectMatrix = MM*objectMatrix;
+    MM = MM.inverse().eval();
+    MM.transposeInPlace();
     normalsMatrix = MM*normalsMatrix;
     updateExtents();
 }
