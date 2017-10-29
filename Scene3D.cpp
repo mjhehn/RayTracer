@@ -91,8 +91,8 @@ void Scene3D::printTImage()
     int g = 0;
     int b = 0;
     int j = 1;
-    for(int i = camera.rayTVals.size()-1; i>=0; --i)
-    {
+    for(unsigned int i = 0; i < camera.image.cols(); ++i)
+    { 
         if(camera.rayTVals[i] == 0)
         {
             r = g = b = 239;
@@ -166,20 +166,21 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, bool& tsNotSet)
                     tmin = tmax = ray.t;
                     tsNotSet = false;
                 }
-                else //if (ray.t == std::min(lowt, ray.t))
+                else if (ray.t <= lowt)
                 {
                     lowt = std::min(lowt, ray.t);
                     tmin = std::min(tmin, ray.t);
-
+                    
                     //average the normals of the corners of the face.
                     Vector3d A = objects[k].objectMatrix.col(objects[k].faces[l].point1-1).head<3>();
                     Vector3d B = objects[k].objectMatrix.col(objects[k].faces[l].point2-1).head<3>();
                     Vector3d C = objects[k].objectMatrix.col(objects[k].faces[l].point3-1).head<3>();
-                    hitNormal  = (B-A).cross((C-A));
+                    hitNormal = (B-A).cross(C-A)*-1;
                     mat = *(std::find(objects[k].mat.begin(), objects[k].mat.end(), objects[k].faces[l].material));
                     hitNormal.normalize();
                     color = colorize(ray, hitNormal, mat);
                 }
+                else{;}
             }
             else{;}
         }
@@ -227,20 +228,20 @@ Vector3d Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& 
         vectorToLight.normalize();
         if(hitNormal.dot(vectorToLight) > 0.0)
         {
-            double temp = hitNormal.dot(vectorToLight);
-            color[0] += (mat.Kd[0]*lights[i].rgb[0])*temp;
-            color[1] += (mat.Kd[1]*lights[i].rgb[1])*temp;
-            color[2] += (mat.Kd[2]*lights[i].rgb[2])*temp;
+            double normalDottoLight = hitNormal.dot(vectorToLight);
+            color[0] += (mat.Kd[0]*lights[i].rgb[0])*normalDottoLight;
+            color[1] += (mat.Kd[1]*lights[i].rgb[1])*normalDottoLight;
+            color[2] += (mat.Kd[2]*lights[i].rgb[2])*normalDottoLight;
 
-            Vector3d vectorToCamera;
-            vectorToCamera = ray.startPoint - hitPoint;
+            Vector3d vectorToCamera = ray.startPoint - hitPoint;
             vectorToCamera.normalize();
-            Vector3d spR = (2*(temp)*hitNormal)-vectorToLight;
+            Vector3d spR = (2*(normalDottoLight)*hitNormal)-vectorToLight;
 
             double spectralFalloff = pow((vectorToCamera.dot(spR)),mat.phong);
             color[0] += mat.Ks[0] * lights[i].rgb[0]* spectralFalloff;
             color[1] += mat.Ks[1] * lights[i].rgb[1]* spectralFalloff;
             color[2] += mat.Ks[2] * lights[i].rgb[2]* spectralFalloff;
+            
         }
     }
 

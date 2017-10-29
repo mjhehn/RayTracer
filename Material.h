@@ -58,5 +58,10 @@ inline bool operator==(const Material& lhs, const std::string& other)
         return lhs.name == other;
 }
 
+inline ostream& operator<<(ostream& out, const Material& mat)
+{
+    return out<<mat.name<<"\n";
+}
+
 
 #endif
