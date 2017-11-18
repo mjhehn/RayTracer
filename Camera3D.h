@@ -30,12 +30,14 @@ public:
     int resX;
     int resY;
     vector<double> rayTVals;
+    Matrix<Vector3d, Dynamic, Dynamic> imageParallel;
     Matrix<double, 3, Dynamic> image;
     int imagePosition;
 
     void print();
     void addToImage(Vector3d& pixel);
-    Vector3d pixelPoint(double i, double j);
+    void addToImage(const int& x, const int& y, const Vector3d& pixel);
+    Vector3d pixelPoint(double i, double j) const;
 
 };
 

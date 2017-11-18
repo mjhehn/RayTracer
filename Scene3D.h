@@ -14,6 +14,11 @@ using std::vector;
 using std::string;
 #include <regex>
 #include <algorithm>
+#include <limits>
+
+#include <thread>
+#include <future>
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 using namespace Eigen;
@@ -46,9 +51,10 @@ public:
     void print();
     void printObjectsToFile();
     void printImage();
+    void printImageNew();
     void printTImage();
 
-    void rayTrace(Ray& ray, Vector3d& color, bool& tsNotSet);
+    void rayTrace(Ray& ray, Vector3d& color);
     Vector3d colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat );
     void castRays();
     void castRaysOld();

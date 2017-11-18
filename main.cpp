@@ -25,8 +25,8 @@ int main(int argc, const char** argv)
     int returnCode = 0;
     Scene3D scene(argv[2], argv[1]);
     scene.castRays();
-    scene.printImage();
-    //scene.printTImage();
+    scene.printImageNew();
+  //  scene.printTImage();
     return returnCode;
 }
 

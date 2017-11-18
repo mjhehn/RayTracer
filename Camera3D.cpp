@@ -28,6 +28,7 @@ Camera3D::Camera3D(ifstream& fin)
     rayTVals.reserve(resX*resY);
     image.resize(3, resX*resY);
     imagePosition = 0;
+    imageParallel.resize(resX,resY);
 }
 
 Camera3D::~Camera3D()
@@ -71,7 +72,7 @@ void Camera3D::print()
     cout<<"Res: "<<resX<<" "<<resY<<endl;
 }
 
-Vector3d Camera3D::pixelPoint(double i, double j)
+Vector3d Camera3D::pixelPoint(double i, double j) const
 {
     double px = i/(resX-1)*(imageRect[2] - imageRect[0])+imageRect[0];
     double py = j/(resY-1)*(imageRect[3] - imageRect[1])+imageRect[1];
@@ -83,6 +84,13 @@ void Camera3D::addToImage(Vector3d& pixel)
 {
     image.col(imagePosition) = pixel;
     ++imagePosition;
+    return;
+}
+
+void Camera3D::addToImage(const int& x, const int& y, const Vector3d& pixel)
+{
+    imageParallel(x,y) = pixel;
+    return;
 }
 
 
