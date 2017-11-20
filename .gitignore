@@ -43,3 +43,4 @@ Eigen/
 *.txt
 *.jpg
 *.ppm
+*.mtl
