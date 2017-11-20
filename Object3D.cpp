@@ -298,7 +298,7 @@ bool Object3D::checkSphere(const Ray& ray)
     double v = vVector.dot(ray.dirVector);
     double csq = vVector.dot(vVector);
     double dsq = pow(sphereRadius, 2.0) - (csq - pow(v, 2.0));
-    return !(dsq < 0);
+    return !(dsq < 0.001);
 }
 
 bool Object3D::checkIntersection(const int& i, Ray& ray)
@@ -318,26 +318,28 @@ bool Object3D::checkIntersection(const int& i, Ray& ray)
         Vector3d Y = a - ray.startPoint;
         Vector3d swap;
         
-        double mDeterminant = M.determinant();
+        float mDeterminant = M.determinant();
         if(mDeterminant != 0)
         {
             swap = Mi.col(0);   //opimization for swap rather than a full copy
             Mi.col(0) = Y;
-            double beta = Mi.determinant()/mDeterminant;
+            float beta = Mi.determinant()/mDeterminant;
             if(beta>=0)
             {
                 Mi.col(0) = swap;
                 swap = Mi.col(1);
                 Mi.col(1) = Y;
-                double gamma = Mi.determinant()/mDeterminant;
-                if( (beta+gamma)<=1 && gamma>= 0)
+                float gamma = Mi.determinant()/mDeterminant;
+                if( (beta+gamma)<=1.001 && gamma>= 0)
                 {
                     Mi.col(1) = swap;
                     Mi.col(2) = Y;
-                    double t = Mi.determinant()/mDeterminant;
+                    float t = Mi.determinant()/mDeterminant;
                     if( t > 0)
                     {
                         ray.t = t;
+                        ray.beta = beta;
+                        ray.gamma = gamma;
                         return true;
                     }
                 }

@@ -175,7 +175,7 @@ void Scene3D::printImageNew()
     fout.close();
 }
 
-Vector3d Scene3D::rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int objectHit, int sphereHit, int recursionLevel)
+void Scene3D::rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int recursionLevel)
 {
     double lowt = std::numeric_limits<double>::max();
     Vector3d hitNormal;
@@ -187,24 +187,23 @@ Vector3d Scene3D::rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int o
         //check for intersection with sphere defined by the object.
         for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
             intersected = objects[k].checkIntersection(l, ray);   
-            if(intersected && ray.t <= lowt && objectHit != k)
+            if(intersected && ray.t <= lowt)
             {
                 if(!somethingHit)
                     somethingHit = true;
                 lowt = std::min(lowt, ray.t);
                 tmin = std::min(tmin, ray.t);
-                
+                ray.objectHit = k;
+                ray.sphereHit = -1;
                 //average the normals of the corners of the face.
-                objectHit = k;
-                sphereHit = -1;
                 if(objects[k].faces[l].normals)
                 {
-                    hitNormal = (-1.0)*(1.0/3.0)*(objects[k].normalsMatrix.col(objects[k].faces[l].point1Normal-1).head<3>() + objects[k].normalsMatrix.col(objects[k].faces[l].point2Normal-1).head<3>() + objects[k].normalsMatrix.col(objects[k].faces[l].point3Normal-1).head<3>());                        
+                    hitNormal = (-1.0)*(1.0/3.0)*((1-ray.beta+ray.gamma)*objects[k].normalsMatrix.col(objects[k].faces[l].point1Normal-1).head<3>() + (1-ray.beta)*objects[k].normalsMatrix.col(objects[k].faces[l].point2Normal-1).head<3>() + (1-ray.gamma)*objects[k].normalsMatrix.col(objects[k].faces[l].point3Normal-1).head<3>());                        
                     //cout<<endl<<objects[k].normalsMatrix.col(objects[k].faces[l].point1Normal-1).head<3>()<<" + "<<objects[k].normalsMatrix.col(objects[k].faces[l].point2Normal-1).head<3>()<<" + "<<objects[k].normalsMatrix.col(objects[k].faces[l].point3Normal-1).head<3>()<<endl;
                     //cout<<hitNormal<<endl;
                 }
                 else{
-                    ;
+                    cout<<"why are you here? you shouldn't be here."<<endl;
                 }
                 
                 mat = *(std::find(objects[k].mat.begin(), objects[k].mat.end(), objects[k].faces[l].material));
@@ -216,7 +215,7 @@ Vector3d Scene3D::rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int o
     //checkspheres
     for(unsigned int k = 0; k<spheres.size(); ++k){
         intersected = spheres[k].checkIntersection(ray);   
-        if(intersected && sphereHit != k)
+        if(intersected)
         {
             if(!somethingHit)
                 somethingHit = true;
@@ -224,8 +223,8 @@ Vector3d Scene3D::rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int o
             tmin = std::min(tmin, ray.t); 
             hitNormal = (ray.startPoint + ray.t*ray.dirVector) - spheres[k].center();
             mat = spheres[k].material;
-            sphereHit = k;
-            objectHit = -1;
+            ray.objectHit = -1;
+            ray.sphereHit = k;
         }
         else{;}
     }
@@ -236,12 +235,12 @@ Vector3d Scene3D::rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int o
         ray.t = lowt;
         tmax = std::max(tmax, ray.t);
         hitNormal.normalize();
-        color = colorize(ray, hitNormal, mat, color, attenuation, recursionLevel, sphereHit, objectHit); 
+        colorize(ray, hitNormal, mat, color, attenuation, recursionLevel); 
     }
-    return color;
+    return;
 }
 
-Vector3d Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat, Vector3d accumulatedColor, Vector3d attenuation, int recursionLevel, int sphereHit, int objectHit)
+void Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat, Vector3d& accumulatedColor, Vector3d& attenuation, int recursionLevel)
 {
     Vector3d hitPoint =(ray.startPoint + ray.t*ray.dirVector);
     Vector3d color;
@@ -249,13 +248,11 @@ Vector3d Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& 
     color<<  ambient[0]*mat.Ka[0], ambient[1]*mat.Ka[1], ambient[2]*mat.Ka[2];
     for(unsigned int i = 0; i < lights.size(); i++)
     {
-        Vector3d vectorToLight;
-        vectorToLight << lights[i].location[0] - hitPoint[0], lights[i].location[1] - hitPoint[1], lights[i].location[2] - hitPoint[2];
+        Vector3d L;
+        L << lights[i].location[0], lights[i].location[1], lights[i].location[2];
+        Vector3d vectorToLight = L - hitPoint;
         vectorToLight.normalize();
-        Ray VtoL(hitPoint, 0, hitPoint+vectorToLight);
-        if(checkForLights(VtoL, sphereHit, objectHit))
-        {
-            if(hitNormal.dot(vectorToLight) > 0.0)
+            if(hitNormal.dot(vectorToLight) > 0 && notShadowed(hitPoint, L, ray))
             {
                 double normalDottoLight = hitNormal.dot(vectorToLight);
                 color[0] += (mat.Kd[0]*lights[i].rgb[0])*normalDottoLight;
@@ -266,47 +263,36 @@ Vector3d Scene3D::colorize(Ray& ray, const Vector3d& hitNormal, const Material& 
                 vectorToCamera.normalize();
                 Vector3d spR = (2*(normalDottoLight)*hitNormal)-vectorToLight;
 
-                if((vectorToCamera.dot(spR)) > 0.0)
+                if((vectorToCamera.dot(spR)) > 0)
                 {
                     double spectralFalloff = pow((vectorToCamera.dot(spR)),mat.phong);
                     color[0] += mat.Ks[0] * lights[i].rgb[0]* spectralFalloff;
                     color[1] += mat.Ks[1] * lights[i].rgb[1]* spectralFalloff;
                     color[2] += mat.Ks[2] * lights[i].rgb[2]* spectralFalloff;
                 }
-            }
-        }   
+            }   
     }
-    //accumulatedColor = color;
-    accumulatedColor += attenuation.cwiseProduct(color); //(1.0-mat.reflectivity);
-    //cout<<"start: "<<accumulatedColor.transpose()<<"Rec level"<<recursionLevel<<endl;
-    if(recursionLevel > 0)
-    {
-        Vector3d Rv = (ray.dirVector)* (-1);
-        Rv = 2*(Rv.dot(hitNormal))*hitNormal - Rv;
-        Ray reflectionRay(hitPoint, std::numeric_limits<double>::max());
-        reflectionRay.dirVector = Rv;
-        attenuation = mat.Kr.cwiseProduct(attenuation);//mat.reflectivity;
-        accumulatedColor = rayTrace(reflectionRay, accumulatedColor, attenuation, objectHit, sphereHit, (recursionLevel-1));
-    }
-    //cout<<accumulatedColor.transpose()<<"Rec level"<<recursionLevel<<endl;
+    accumulatedColor = color;
 
-    return accumulatedColor;
+
+    return;
 }
 
-bool Scene3D::checkForLights(Ray& ray, int sphereHit, int objectHit)
+bool Scene3D::notShadowed(Vector3d& hitPoint, Vector3d& L, const Ray& originRay)
 {
+    Vector3d VtoL = L - hitPoint;
+    Ray ray(hitPoint, std::numeric_limits<double>::max());
+    ray.dirVector = VtoL.normalized();
+    double distToLight = VtoL.dot(ray.dirVector);
+    
     for(unsigned int k = 0; k<spheres.size(); ++k){
-        if(signed(k) == sphereHit)
-            continue;
-        if(spheres[k].checkIntersection(ray))
+        if(originRay.sphereHit != k && spheres[k].checkIntersection(ray) && ray.t < distToLight)
             return false;
     }
     for(unsigned int k = 0; k<objects.size(); ++k){
         for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
-            if(signed(k) == objectHit)
-                continue;
-            if(objects[k].checkIntersection(l, ray))
-                return true;
+            if(originRay.objectHit != k && objects[k].checkIntersection(l, ray)  && ray.t < distToLight)
+                return false;
         }
     }
     
@@ -327,7 +313,7 @@ void Scene3D::castRays()
             Vector3d attenuation;
             attenuation<<1,1,1;
 
-            color = rayTrace(ray, color, attenuation, -1, -1, camera.recursionDepth);
+            rayTrace(ray, color, attenuation, camera.recursionDepth);
             if( ray.t == std::numeric_limits<double>::max() || ray.t == std::numeric_limits<double>::min())
                 ray.t = 0;
             

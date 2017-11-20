@@ -12,6 +12,10 @@ class Ray
 public:
     Vector3d startPoint;    //point starts from
     double t;
+    double beta;
+    double gamma;
+    int objectHit;
+    int sphereHit;
     Vector3d dirVector; //direction going. startPoint-Eye normalized.
 
     Ray(Vector3d pos, double ct, Vector3d eye): startPoint(pos), t(ct), dirVector(startPoint-eye) {dirVector.normalize();};

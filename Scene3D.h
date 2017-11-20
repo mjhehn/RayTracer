@@ -54,10 +54,10 @@ public:
     void printImageNew();
     void printTImage();
 
-    Vector3d rayTrace(Ray& ray, Vector3d color, Vector3d attenuation, int objectHit, int sphereHit, int recursionLevel);
-    Vector3d colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat, Vector3d accumulatedColor, Vector3d attenuation, int recursionLevel, int sphereHit, int objectHit);
+    void rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int recursionLevel);
+    void colorize(Ray& ray, const Vector3d& hitNormal, const Material& mat, Vector3d& accumulatedColor, Vector3d& attenuation, int recursionLevel);
+    bool notShadowed(Vector3d& hitPoint, Vector3d& L, const Ray& originRay);
     void castRays();
-    bool checkForLights(Ray& ray, int sphereHit, int objectHit);
     void castRaysOld();
     bool checkIntersection(int i, Face& Face, Ray& ray);
 };
