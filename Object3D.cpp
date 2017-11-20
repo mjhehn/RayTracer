@@ -358,6 +358,8 @@ void Object3D::generateMaterialsList(stringstream& ss)
     Vector3d Ka;
     Vector3d Kd;
     Vector3d Ks;
+    Vector3d Kr;
+    Kr[0] = Kr[1] = Kr[2] = 1.0; //update if needed. defaulted for A4;
     double r;
     double g;
     double b;
@@ -384,9 +386,14 @@ void Object3D::generateMaterialsList(stringstream& ss)
             fin>>r; fin>>g; fin>>b;
             Ks<<r,g,b;
         }
+        else if(temp == "Kr")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Kr<<r,g,b;
+        }
         else if(temp == "illum")
         {
-            mat.push_back(Material(matName, phong, Ka, Kd, Ks));
+            mat.push_back(Material(matName, phong, Ka, Kd, Ks, Kr));
         }
         else if(temp == "Ns")
         {

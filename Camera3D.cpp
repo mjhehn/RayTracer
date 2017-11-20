@@ -19,6 +19,12 @@ Camera3D::Camera3D(ifstream& fin)
     fin>>buffer>>distance;
     fin>>buffer>>imageRect[0]>>imageRect[1]>>imageRect[2]>>imageRect[3];
     fin>>buffer>>resX>>resY;
+    fin>>buffer;
+    if(buffer=="recursionLevel")
+    {
+        fin>>recursionDepth;
+    }
+    else{recursionDepth = 0;}
     WV = (eye-look)*-1;
     WV.normalize();
     UV = up.cross(WV);
@@ -60,6 +66,7 @@ Camera3D::Camera3D(const Camera3D& cam)
 
     resX = cam.resX;
     resY = cam.resY;
+    recursionDepth = cam.recursionDepth;
 }
 
 void Camera3D::print()

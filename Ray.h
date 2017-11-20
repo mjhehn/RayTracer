@@ -18,11 +18,6 @@ public:
     Ray(Vector3d pos, double ct): startPoint(pos), t(ct){};
     ~Ray(){};
 
-    inline void setDirVector(Vector3d& eye)
-    {
-        dirVector = startPoint-eye;
-        dirVector.normalize();
-    }
 };
 
 inline ostream& operator<<(ostream& out, const Ray& r)

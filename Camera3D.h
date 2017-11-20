@@ -33,6 +33,7 @@ public:
     Matrix<Vector3d, Dynamic, Dynamic> imageParallel;
     Matrix<double, 3, Dynamic> image;
     int imagePosition;
+    int recursionDepth;
 
     void print();
     void addToImage(Vector3d& pixel);

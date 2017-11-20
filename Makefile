@@ -8,4 +8,4 @@ clean:
 	rm raytracer
 	make
 tar:
-	tar -cvf pa3.tar *.cpp *.h Makefile readme.md Eigen/
+	tar -cvf pa4.tar *.cpp *.h Makefile readme.md Eigen/
