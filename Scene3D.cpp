@@ -286,12 +286,12 @@ bool Scene3D::notShadowed(Vector3d& hitPoint, Vector3d& L, const Ray& originRay)
     double distToLight = VtoL.dot(ray.dirVector);
     
     for(unsigned int k = 0; k<spheres.size(); ++k){
-        if(originRay.sphereHit != k && spheres[k].checkIntersection(ray) && ray.t < distToLight)
+        if(originRay.sphereHit != signed(k) && spheres[k].checkIntersection(ray) && ray.t < distToLight)
             return false;
     }
     for(unsigned int k = 0; k<objects.size(); ++k){
         for(unsigned int l = 0; l < objects[k].faces.size(); ++l){
-            if(originRay.objectHit != k && objects[k].checkIntersection(l, ray)  && ray.t < distToLight)
+            if(originRay.objectHit != signed(k) && objects[k].checkIntersection(l, ray)  && ray.t < distToLight)
                 return false;
         }
     }
