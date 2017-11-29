@@ -46,6 +46,39 @@ public:
         center<<x,y,z;
         return center;
     }
+
+    inline Vector3d refractRay(const Ray& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, etaOut, etaIn)
+    {
+        double etaRatio = etaOut/etaIn;
+        Vector3d toOrigin = incomingRay.dirVector*(-1.0);
+        double rayDotNorm = toOrigin.dot(hitNormal);
+        double radSquare = (etaRatio*etaRatio)*((rayDotNorm*rayDotNorm)-1) +1;
+        Vector3d refractedRay = Vector3d::Zeros();
+        if(radSquare > 0.0001)
+        {
+            double b = etaRatio*rayDotNorm - sqrt(radSquare);   //why b? I don't know. because it works, and it's what Ross used.
+            refractedRay = (-etar)*toOrigin + b*hitNormal;
+        }
+        else{;}
+        return refractedRay;
+
+    }
+
+    inline Ray refractExit(const Ray& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, etaOut, etaIn)
+    {
+        Vector3d rayIntoSphere = refractRay(incomingRay, hitPoint, (hitPoint-center).normalized(), etaOut, etaIn);
+        Ray ray();
+        if(rayIntoSphere[0]+rayIntoSphere[1]+rayIntoSphere[2] != 0)
+        {
+            Vector3d exitPoint = hitPoint + 2*((center-hitPoint).dot(rayIntoSphere))*rayIntoSphere;
+            Vector3d hitNormalOut = (center-exitPoint).normalized();
+            Vector3d rayOutOfSphere = refractRay((-1*rayIntoSphere), exitPoint, hitNormalOut, etaIn, etaOut);
+            ray.startPoint = exitPoint;
+            ray.dirVector = rayOutOfSphere;
+        }
+        else{;}
+        return ray;
+    }
 };
 
 inline ostream& operator<<(ostream& out, const Sphere& sphere)

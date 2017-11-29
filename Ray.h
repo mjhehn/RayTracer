@@ -18,9 +18,9 @@ public:
     int sphereHit;
     Vector3d dirVector; //direction going. startPoint-Eye normalized.
 
-    Ray(Vector3d pos, double ct, Vector3d eye): startPoint(pos), t(ct), dirVector(startPoint-eye) {dirVector.normalize();};
-    Ray(Vector3d pos, double ct): startPoint(pos), t(ct){};
-    ~Ray(){};
+    Ray(Vector3d pos, double ct, Vector3d eye): startPoint(pos), t(ct), dirVector(startPoint-eye) {dirVector.normalize(); sphereHit = -1; objectHit = -1; beta = gamma = 0;};
+    Ray(Vector3d pos, double ct): startPoint(pos), t(ct){sphereHit = -1; objectHit = -1; beta = gamma = 0;};
+    ~Ray(){startPoint = Vector3d::Zeros(); dirVector = Vector3d::Zeros(); t = gamma = beta = objectHit = sphereHit = -1;};
 
 };
 

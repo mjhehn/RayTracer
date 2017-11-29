@@ -313,7 +313,7 @@ bool Object3D::checkIntersection(const int& i, Ray& ray)
         M.col(0) = a-b;     //cramer's rule begins
         M.col(1) = a-c;
         M.col(2) = ray.dirVector;
-    
+
         Matrix3d Mi = M;
         Vector3d Y = a - ray.startPoint;
         Vector3d swap;
