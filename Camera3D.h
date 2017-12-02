@@ -6,6 +6,8 @@
 #include <Eigen/Geometry>
 using namespace Eigen;
 #include <vector>
+#include <limits>
+
 
 #include <Ray.h>
 #include <Object3D.h>
@@ -39,7 +41,6 @@ public:
     void addToImage(Vector3d& pixel);
     void addToImage(const int& x, const int& y, const Vector3d& pixel);
     Vector3d pixelPoint(double i, double j) const;
-
 };
 
 #endif

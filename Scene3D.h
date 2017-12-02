@@ -40,6 +40,7 @@ public:
     std::vector<Light3D> lights;
     double ambient[3];
     Camera3D camera;
+    double eta;
     
 
     

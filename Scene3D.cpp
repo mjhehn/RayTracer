@@ -2,6 +2,7 @@
 
 Scene3D::Scene3D(string imageFileName, string driverFileName)
 {
+    eta = 1.0;
     imageName = imageFileName;
     ifstream fin;
     tmin = std::numeric_limits<double>::max();
@@ -40,6 +41,10 @@ Scene3D::Scene3D(string imageFileName, string driverFileName)
         else if(buffer == "ambient")
         {
             fin>>ambient[0]>>ambient[1]>>ambient[2];
+        }
+        else if(buffer == "eta")
+        {
+            fin>>eta;
         }
         else if(buffer == "light")
         {
@@ -225,7 +230,7 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int sph
                 somethingHit = true;
             lowt = std::min(lowt, ray.t);
             tmin = std::min(tmin, ray.t); 
-            hitNormal = (ray.startPoint + ray.t*ray.dirVector) - spheres[k].center();
+            hitNormal = (ray.startPoint + ray.t*ray.dirVector) - spheres[k].getCenter();
             mat = spheres[k].material;
             ray.objectHit = -1;
             ray.sphereHit = k;
@@ -244,13 +249,30 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int sph
         reflection.normalize(); //but i don't trust it
         Vector3d hitPoint =(ray.startPoint + ray.t*ray.dirVector);
         colorize(reflection, hitPoint, hitNormal, mat, color, attenuation, ray.sphereHit, ray.objectHit);
+        attenuation = attenuation.cwiseProduct(mat.Kr);
         if(recursionLevel > 0)
         {
+            Vector3d flec;
+            flec[0] = flec[1] = flec[2] = 0;
             Ray reflectionRay(hitPoint, std::numeric_limits<double>::max());
             reflectionRay.dirVector = (2)*(hitNormal.dot(reflection))*hitNormal - reflection;
             reflectionRay.dirVector.normalize();
-            attenuation = attenuation.cwiseProduct(mat.Kr);
+            
             rayTrace(reflectionRay, color, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
+            color += attenuation.cwiseProduct(flec).cwiseProduct(mat.Ko);
+        }
+        if( recursionLevel > 0 && mat.Ko.sum() < 3.0 )
+        {
+            Vector3d thru;
+            thru[0] = thru[1] = thru[2] = 0;
+            Ray fraR = spheres[ray.sphereHit].refractExit(-ray.dirVector, hitPoint, hitNormal, mat.etaIn, eta);
+            if (fraR.t != -1)
+            {
+                rayTrace(fraR, thru, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
+                Vector3d one;
+                one<<1,1,1;
+                color += attenuation.cwiseProduct(thru).cwiseProduct(one-mat.Ko);
+            }
         }
     }
    // return color;
@@ -297,7 +319,7 @@ void Scene3D::colorize(const Vector3d& toCamera, const Vector3d& hitPoint, Vecto
         }   
     }
     
-    accumulatedColor += attenuation.cwiseProduct(color)*(1-mat.reflectivity);
+    accumulatedColor += attenuation.cwiseProduct(mat.Ko).cwiseProduct(color);
 }
 
 bool Scene3D::notShadowed(const Vector3d& hitPoint, Vector3d& L, const int& sphereHit, const int& objectHit)
@@ -340,8 +362,7 @@ void Scene3D::castRays()
                 ray.t = 0;
             
             //swap to inserting rgb color into camera.image here
-            camera.rayTVals.push_back(ray.t);
-            camera.addToImage(color);
+            //camera.addToImage(color);
             camera.addToImage(i, j, color);
         }
     }

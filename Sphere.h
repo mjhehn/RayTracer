@@ -40,44 +40,47 @@ public:
         return true;
     }
 
-    inline Vector3d center()
+    inline Vector3d getCenter()
     {
         Vector3d center;
         center<<x,y,z;
         return center;
     }
 
-    inline Vector3d refractRay(const Ray& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, etaOut, etaIn)
+    inline Vector3d refractRay(const Vector3d& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, double eta1, double eta2)
     {
-        double etaRatio = etaOut/etaIn;
-        Vector3d toOrigin = incomingRay.dirVector*(-1.0);
-        double rayDotNorm = toOrigin.dot(hitNormal);
+        double etaRatio = eta1/eta2;
+        double rayDotNorm = incomingRay.dot(hitNormal);
         double radSquare = (etaRatio*etaRatio)*((rayDotNorm*rayDotNorm)-1) +1;
-        Vector3d refractedRay = Vector3d::Zeros();
-        if(radSquare > 0.0001)
+        Vector3d refractedRay = Vector3d::Zero(3);
+        if(radSquare >=0)
         {
             double b = etaRatio*rayDotNorm - sqrt(radSquare);   //why b? I don't know. because it works, and it's what Ross used.
-            refractedRay = (-etar)*toOrigin + b*hitNormal;
+            refractedRay = (-etaRatio)*incomingRay + b*hitNormal;
         }
         else{;}
         return refractedRay;
 
     }
 
-    inline Ray refractExit(const Ray& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, etaOut, etaIn)
+    inline Ray refractExit(const Vector3d& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, const double& etaMat, const double& etaScene)
     {
-        Vector3d rayIntoSphere = refractRay(incomingRay, hitPoint, (hitPoint-center).normalized(), etaOut, etaIn);
-        Ray ray();
-        if(rayIntoSphere[0]+rayIntoSphere[1]+rayIntoSphere[2] != 0)
+        Vector3d center = getCenter();
+        Vector3d rayDir = refractRay(incomingRay, hitPoint, hitNormal, etaScene, etaMat);
+        Ray refRay(Vector3d::Zero(3), std::numeric_limits<double>::max());
+        if(rayDir.sum() != 0)
         {
-            Vector3d exitPoint = hitPoint + 2*((center-hitPoint).dot(rayIntoSphere))*rayIntoSphere;
-            Vector3d hitNormalOut = (center-exitPoint).normalized();
-            Vector3d rayOutOfSphere = refractRay((-1*rayIntoSphere), exitPoint, hitNormalOut, etaIn, etaOut);
-            ray.startPoint = exitPoint;
-            ray.dirVector = rayOutOfSphere;
+            Vector3d exitPoint = (center-hitPoint);            
+            exitPoint = hitPoint + 2*exitPoint.dot(rayDir)*rayDir;
+            Vector3d hitNormalOut = (center-exitPoint);
+            hitNormalOut.normalize();
+            Vector3d rayDirOut = refractRay(-rayDir, exitPoint, hitNormalOut, etaMat, etaScene);
+            //rayDirOut.normalize();
+            refRay.startPoint = exitPoint;
+            refRay.dirVector = rayDirOut;
         }
         else{;}
-        return ray;
+        return refRay;
     }
 };
 

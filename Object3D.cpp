@@ -357,11 +357,12 @@ void Object3D::generateMaterialsList(stringstream& ss)
     fin.open(filename);
     string temp = "";
     string matName = "";
-    Vector3d Ka;
-    Vector3d Kd;
-    Vector3d Ks;
+    Vector3d Ka = Vector3d::Zero(3);
+    Vector3d Kd = Vector3d::Zero(3);
+    Vector3d Ks = Vector3d::Zero(3);
     Vector3d Kr;
     Kr[0] = Kr[1] = Kr[2] = 1.0; //update if needed. defaulted for A4;
+    Vector3d Ko = Kr;
     double r;
     double g;
     double b;
@@ -395,7 +396,7 @@ void Object3D::generateMaterialsList(stringstream& ss)
         }
         else if(temp == "illum")
         {
-            mat.push_back(Material(matName, phong, Ka, Kd, Ks, Kr));
+            mat.push_back(Material(matName, phong, Ka, Kd, Ks, Kr, Ko));
         }
         else if(temp == "Ns")
         {
