@@ -361,6 +361,7 @@ void Scene3D::castRays()
             if( ray.t == std::numeric_limits<double>::max() || ray.t == std::numeric_limits<double>::min())
                 ray.t = 0;
             
+            camera.rayTVals.push_back(ray.t);
             //swap to inserting rgb color into camera.image here
             //camera.addToImage(color);
             camera.addToImage(i, j, color);

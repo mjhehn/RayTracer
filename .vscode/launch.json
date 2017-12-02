@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/mnt/g/Users/MJH/OneDrive/CSU/cs410/workspace/raytracer",
-            "args": ["driver00.txt", "driver00.ppm"],
+            "args": ["simple00.txt", "simple00.ppm"],
             "stopAtEntry": false,
             "cwd": "/mnt/g/Users/MJH/OneDrive/CSU/cs410/workspace",
             "environment": [],

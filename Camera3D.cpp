@@ -35,6 +35,7 @@ Camera3D::Camera3D(ifstream& fin)
     image.resize(3, resX*resY);
     imagePosition = 0;
     imageParallel.resize(resX,resY);
+    imageParallel.fill(Vector3d::Zero(3));
 }
 
 Camera3D::~Camera3D()
@@ -97,7 +98,7 @@ void Camera3D::addToImage(Vector3d& pixel)
 
 void Camera3D::addToImage(const int& x, const int& y, const Vector3d& pixel)
 {
-    imageParallel(x,y) = pixel;
+    imageParallel(x,y) += pixel;
     return;
 }
 
