@@ -249,31 +249,32 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int sph
         reflection.normalize(); //but i don't trust it
         Vector3d hitPoint =(ray.startPoint + ray.t*ray.dirVector);
         colorize(reflection, hitPoint, hitNormal, mat, color, attenuation, ray.sphereHit, ray.objectHit);
-        attenuation = attenuation.cwiseProduct(mat.Kr);
+        
         if(recursionLevel > 0)
-        {
-            Vector3d flec;
-            flec[0] = flec[1] = flec[2] = 0;
+        {       
+            Vector3d flec = Vector3d::Zero(3);
             Ray reflectionRay(hitPoint, std::numeric_limits<double>::max());
             reflectionRay.dirVector = (2)*(hitNormal.dot(reflection))*hitNormal - reflection;
             reflectionRay.dirVector.normalize();
             
+            attenuation = attenuation.cwiseProduct(mat.Kr);
             rayTrace(reflectionRay, color, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
             color += attenuation.cwiseProduct(flec).cwiseProduct(mat.Ko);
-        }
-        if( recursionLevel > 0 && mat.Ko.sum() < 3.0 )
-        {
-            Vector3d thru;
-            thru[0] = thru[1] = thru[2] = 0;
-            Ray fraR = spheres[ray.sphereHit].refractExit(-ray.dirVector, hitPoint, hitNormal, mat.etaIn, eta);
-            if (fraR.t != -1)
+
+            if(mat.Ko.sum() < 3.0 )
             {
-                rayTrace(fraR, thru, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
-                Vector3d one;
-                one<<1,1,1;
-                color += attenuation.cwiseProduct(thru).cwiseProduct(one-mat.Ko);
+                Vector3d thru = Vector3d::Zero(3);
+                Ray fraR = spheres[ray.sphereHit].refractExit(-ray.dirVector, hitPoint, hitNormal, mat.etaIn, eta);
+                if (fraR.t != -1)
+                {
+                    rayTrace(fraR, thru, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
+                    Vector3d one;
+                    one<<1,1,1;
+                    color += attenuation.cwiseProduct(thru).cwiseProduct(one-mat.Ko);
+                }
             }
         }
+        else{;}
     }
    // return color;
    return;
