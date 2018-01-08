@@ -27,6 +27,9 @@ Object3D::Object3D(ifstream& fin)
 	Matrix4d S = buildScaleMatrix(scale);
 	Matrix4d MM = T*S*R;
     objectMatrix = MM*objectMatrix;
+    MM = MM.inverse().eval();
+    MM.transposeInPlace();
+    normalsMatrix = MM*normalsMatrix;
     updateExtents();
 }
 
@@ -43,6 +46,8 @@ void Object3D::buildFromFile(string filename)
             comments.append("\n"+buffer);
             std::getline(fin, buffer);
         }
+        bool materialSet = false;
+        string currentMaterial = "";
         comments.append("\n #modified/translated version of "+filename);
         while(!fin.fail())
         {
@@ -58,6 +63,15 @@ void Object3D::buildFromFile(string filename)
                 ss>>x>>y>>z;
                 objectMatrix.conservativeResize(NoChange, objectMatrix.cols()+1);
                 objectMatrix.col(objectMatrix.cols()-1) << x, y, z, 1;
+            }
+            else if(ssbuffer == "vn")
+            {
+                double x = 0;
+                double y = 0;
+                double z = 0;
+                ss>>x>>y>>z;
+                normalsMatrix.conservativeResize(NoChange, normalsMatrix.cols()+1);
+                normalsMatrix.col(normalsMatrix.cols()-1) << x, y, z, 1;
             }
             else if(ssbuffer == "f")
             {
@@ -77,7 +91,7 @@ void Object3D::buildFromFile(string filename)
                 }
                 
                 if(normals) {buffer = std::regex_replace(buffer, std::regex(R"([/]{2})"), " // ");}
-                else{buffer = std::regex_replace(buffer, std::regex(R"([/]{1})"), " / "); }//remove /'s from buffer lines, which are used for normal vectors for planes
+                else{buffer = std::regex_replace(buffer, std::regex(R"([/]{1})"), " / "); }//remove /'s from buffer lines, which are used for normal vectors for faces
                 
                 ss.str(buffer);
                 string temp;
@@ -97,7 +111,25 @@ void Object3D::buildFromFile(string filename)
                     else{;}
                     ss>>temp;
                 }
-                planes.push_back(Plane(textures, normals, tempPoints));
+                if(materialSet)
+                {
+                    faces.push_back(Face(textures, normals, tempPoints, currentMaterial));
+                }
+                else{
+                    faces.push_back(Face(textures, normals, tempPoints));
+                }
+                
+            }
+            else if(ssbuffer == "usemtl")
+            {
+                ss>>currentMaterial;
+                materialSet = true;
+            }
+            else if(ssbuffer == "mtllib")
+            {
+                generateMaterialsList(ss);
+                currentMaterial = mat[0].name;
+                materialSet = true;
             }
             else{;}
             ss.flush();
@@ -111,7 +143,7 @@ void Object3D::buildFromFile(string filename)
 Object3D::~Object3D()
 {
     objectName="";
-    planes.clear();
+    faces.clear();
 }
 
 void Object3D::print()
@@ -122,7 +154,7 @@ void Object3D::print()
         std::cout<<"v "<<objectMatrix.col(i).row(0)<<" "<<objectMatrix.col(i).row(1)<<" "<<objectMatrix.col(i).row(2)<<"\n";
     }
 
-    for(const auto j: planes)   //c++11 range based looping
+    for(const auto j: faces)   //c++11 range based looping
     {
         std::cout<<"f "<<j<<std::endl;
     }
@@ -172,7 +204,7 @@ void Object3D::printToFile(string folder)
         fout<<"v "<<objectMatrix.col(i).row(0)<<" "<<objectMatrix.col(i).row(1)<<" "<<objectMatrix.col(i).row(2)<<"\n";
     }
 
-    for(const auto j: planes)   //c++11 range based looping
+    for(const auto j: faces)   //c++11 range based looping
     {
         fout<<"f "<<j<<"\n";
     }
@@ -265,51 +297,49 @@ bool Object3D::checkSphere(const Ray& ray)
     Vector3d vVector = center-ray.startPoint;
     double v = vVector.dot(ray.dirVector);
     double csq = vVector.dot(vVector);
-    double dsq = sphereRadius*sphereRadius - (csq - v*v);
-    if(dsq > 0)
-    {
-        return true;
-    }
-    return false;
+    double dsq = pow(sphereRadius, 2.0) - (csq - pow(v, 2.0));
+    return !(dsq < 0.001);
 }
 
-bool Object3D::checkIntersection(const Plane& plane, Ray& ray)
+bool Object3D::checkIntersection(const int& i, Ray& ray)
 {
     if(checkSphere(ray))
     {
-        Vector3d a = objectMatrix.col(plane.point1-1).head<3>();
-        Vector3d b = objectMatrix.col(plane.point2-1).head<3>();
-        Vector3d c = objectMatrix.col(plane.point3-1).head<3>();
+        Vector3d a = objectMatrix.col(faces[i].point1-1).head<3>();
+        Vector3d b = objectMatrix.col(faces[i].point2-1).head<3>();
+        Vector3d c = objectMatrix.col(faces[i].point3-1).head<3>();
         Matrix3d M;
 
         M.col(0) = a-b;     //cramer's rule begins
         M.col(1) = a-c;
         M.col(2) = ray.dirVector;
-    
+
         Matrix3d Mi = M;
         Vector3d Y = a - ray.startPoint;
         Vector3d swap;
         
-        double mDeterminant = M.determinant();
+        float mDeterminant = M.determinant();
         if(mDeterminant != 0)
         {
             swap = Mi.col(0);   //opimization for swap rather than a full copy
             Mi.col(0) = Y;
-            double beta = Mi.determinant()/mDeterminant;
+            float beta = Mi.determinant()/mDeterminant;
             if(beta>=0)
             {
                 Mi.col(0) = swap;
                 swap = Mi.col(1);
                 Mi.col(1) = Y;
-                double gamma = Mi.determinant()/mDeterminant;
-                if( (beta+gamma)<=1 && gamma>= 0)
+                float gamma = Mi.determinant()/mDeterminant;
+                if( (beta+gamma)<=1.001 && gamma>= 0)
                 {
                     Mi.col(1) = swap;
                     Mi.col(2) = Y;
-                    double t = Mi.determinant()/mDeterminant;
+                    float t = Mi.determinant()/mDeterminant;
                     if( t > 0)
                     {
                         ray.t = t;
+                        ray.beta = beta;
+                        ray.gamma = gamma;
                         return true;
                     }
                 }
@@ -319,3 +349,59 @@ bool Object3D::checkIntersection(const Plane& plane, Ray& ray)
     return false;
 }
 
+void Object3D::generateMaterialsList(stringstream& ss)
+{
+    string filename;
+    ss>>filename;
+    ifstream fin;
+    fin.open(filename);
+    string temp = "";
+    string matName = "";
+    Vector3d Ka = Vector3d::Zero(3);
+    Vector3d Kd = Vector3d::Zero(3);
+    Vector3d Ks = Vector3d::Zero(3);
+    Vector3d Kr;
+    Kr[0] = Kr[1] = Kr[2] = 1.0; //update if needed. defaulted for A4;
+    Vector3d Ko = Kr;
+    double r;
+    double g;
+    double b;
+    double phong = 16;
+    while(!fin.fail())
+    {
+        fin>>temp;
+        if(temp == "newmtl")
+        {
+            fin>>matName;
+        }
+        else if(temp == "Ka")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Ka<<r,g,b;
+        }
+        else if(temp == "Kd")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Kd<<r,g,b;
+        }
+        else if(temp == "Ks")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Ks<<r,g,b;
+        }
+        else if(temp == "Kr")
+        {
+            fin>>r; fin>>g; fin>>b;
+            Kr<<r,g,b;
+        }
+        else if(temp == "illum")
+        {
+            mat.push_back(Material(matName, phong, Ka, Kd, Ks, Kr, Ko));
+        }
+        else if(temp == "Ns")
+        {
+            fin>>phong;
+        }
+    }
+    fin.close();  
+}

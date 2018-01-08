@@ -6,6 +6,8 @@
 #include <Eigen/Geometry>
 using namespace Eigen;
 #include <vector>
+#include <limits>
+
 
 #include <Ray.h>
 #include <Object3D.h>
@@ -30,10 +32,15 @@ public:
     int resX;
     int resY;
     vector<double> rayTVals;
+    Matrix<Vector3d, Dynamic, Dynamic> imageParallel;
+    Matrix<double, 3, Dynamic> image;
+    int imagePosition;
+    int recursionDepth;
 
     void print();
-    Vector3d pixelPoint(double i, double j);
-
+    void addToImage(Vector3d& pixel);
+    void addToImage(const int& x, const int& y, const Vector3d& pixel);
+    Vector3d pixelPoint(double i, double j) const;
 };
 
 #endif

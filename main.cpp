@@ -1,9 +1,9 @@
 /*
 Matt Hehn
-09/09/2017
+12/7/2017
 Colorado State - CS410 Computer Graphics
 
-Programming Assignment #1
+Programming Assignment #5
 */
 
 #include <fstream>
@@ -25,7 +25,8 @@ int main(int argc, const char** argv)
     int returnCode = 0;
     Scene3D scene(argv[2], argv[1]);
     scene.castRays();
-    scene.printImage();
+    scene.printImageNew();
+    //scene.printTImage();
     return returnCode;
 }
 

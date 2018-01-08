@@ -19,19 +19,23 @@ Camera3D::Camera3D(ifstream& fin)
     fin>>buffer>>distance;
     fin>>buffer>>imageRect[0]>>imageRect[1]>>imageRect[2]>>imageRect[3];
     fin>>buffer>>resX>>resY;
-    for(int i = 0; i < resY; i++)
+    fin>>buffer;
+    if(buffer=="recursionLevel")
     {
-        for(int j = 0; j < resX; j++)
-        {
-            pixelPoint(j, i);
-        }
+        fin>>recursionDepth;
     }
+    else{recursionDepth = 0;}
     WV = (eye-look)*-1;
     WV.normalize();
     UV = up.cross(WV);
     UV.normalize();
     VV = WV.cross(UV);
     VV.normalize();
+    rayTVals.reserve(resX*resY);
+    image.resize(3, resX*resY);
+    imagePosition = 0;
+    imageParallel.resize(resX,resY);
+    imageParallel.fill(Vector3d::Zero(3));
 }
 
 Camera3D::~Camera3D()
@@ -63,6 +67,7 @@ Camera3D::Camera3D(const Camera3D& cam)
 
     resX = cam.resX;
     resY = cam.resY;
+    recursionDepth = cam.recursionDepth;
 }
 
 void Camera3D::print()
@@ -75,12 +80,26 @@ void Camera3D::print()
     cout<<"Res: "<<resX<<" "<<resY<<endl;
 }
 
-Vector3d Camera3D::pixelPoint(double i, double j)
+Vector3d Camera3D::pixelPoint(double i, double j) const
 {
     double px = i/(resX-1)*(imageRect[2] - imageRect[0])+imageRect[0];
     double py = j/(resY-1)*(imageRect[3] - imageRect[1])+imageRect[1];
+    
     Vector3d pixPoint = eye + (distance*WV) + (px*UV) + (py*VV);
     return pixPoint;
+}
+
+void Camera3D::addToImage(Vector3d& pixel)
+{
+    image.col(imagePosition) = pixel;
+    ++imagePosition;
+    return;
+}
+
+void Camera3D::addToImage(const int& x, const int& y, const Vector3d& pixel)
+{
+    imageParallel(x,y) += pixel;
+    return;
 }
 
 

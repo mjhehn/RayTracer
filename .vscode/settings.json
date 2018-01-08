@@ -90,6 +90,7 @@
         "shared_mutex": "cpp",
         "clocale": "cpp",
         "filesystem": "cpp",
-        "xcomplex": "cpp"
+        "xcomplex": "cpp",
+        "core": "cpp"
     }
 }
