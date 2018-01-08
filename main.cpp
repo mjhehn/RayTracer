@@ -1,9 +1,9 @@
 /*
 Matt Hehn
-09/09/2017
+12/7/2017
 Colorado State - CS410 Computer Graphics
 
-Programming Assignment #1
+Programming Assignment #5
 */
 
 #include <fstream>

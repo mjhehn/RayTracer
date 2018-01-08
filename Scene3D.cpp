@@ -258,7 +258,7 @@ void Scene3D::rayTrace(Ray& ray, Vector3d& color, Vector3d& attenuation, int sph
             reflectionRay.dirVector.normalize();
             
             attenuation = attenuation.cwiseProduct(mat.Kr);
-            rayTrace(reflectionRay, color, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
+            rayTrace(reflectionRay, flec, attenuation, ray.sphereHit, ray.objectHit, (--recursionLevel));
             color += attenuation.cwiseProduct(flec).cwiseProduct(mat.Ko);
 
             if(mat.Ko.sum() < 3.0 )

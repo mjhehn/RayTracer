@@ -47,7 +47,7 @@ public:
         return center;
     }
 
-    inline Vector3d refractRay(const Vector3d& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, double eta1, double eta2)
+    inline Vector3d refractRay(const Vector3d& incomingRay, const Vector3d& hitNormal, double eta1, double eta2)
     {
         double etaRatio = eta1/eta2;
         double rayDotNorm = incomingRay.dot(hitNormal);
@@ -66,7 +66,7 @@ public:
     inline Ray refractExit(const Vector3d& incomingRay, const Vector3d& hitPoint, const Vector3d& hitNormal, const double& etaMat, const double& etaScene)
     {
         Vector3d center = getCenter();
-        Vector3d rayDir = refractRay(incomingRay, hitPoint, hitNormal, etaScene, etaMat);
+        Vector3d rayDir = refractRay(incomingRay, hitNormal, etaScene, etaMat);
         Ray refRay(Vector3d::Zero(3), std::numeric_limits<double>::max());
         if(rayDir.sum() != 0)
         {
@@ -74,12 +74,13 @@ public:
             exitPoint = hitPoint + 2*exitPoint.dot(rayDir)*rayDir;
             Vector3d hitNormalOut = (center-exitPoint);
             hitNormalOut.normalize();
-            Vector3d rayDirOut = refractRay(-rayDir, exitPoint, hitNormalOut, etaMat, etaScene);
+            Vector3d rayDirOut = refractRay(-rayDir, hitNormalOut, etaMat, etaScene);
             //rayDirOut.normalize();
             refRay.startPoint = exitPoint;
             refRay.dirVector = rayDirOut;
         }
         else{;}
+       
         return refRay;
     }
 };
